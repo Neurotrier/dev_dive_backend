@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "dev-dive-backend"
+version = "0.1.0"
+description = ""
+authors = ["Neurotrier <neurotrier123@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.114.1"
+sqlalchemy = "^2.0.34"
+uvicorn = "^0.30.6"
+pydantic = "^2.9.1"
+alembic = "^1.13.2"
+aiosqlite = "^0.20.0"
+asyncpg = "^0.29.0"
+black = "^24.8.0"
+isort = "^5.13.2"
+bcrypt = "^4.2.0"
+python-multipart = "^0.0.9"
+fastapi-jwt-auth2 = "^0.5.0"
+pydantic-settings = "^2.5.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
