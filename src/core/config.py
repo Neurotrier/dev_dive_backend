@@ -26,22 +26,22 @@ class Settings(BaseSettings):
 
     DEBUG: bool = os.getenv("DEBUG", False)
 
-    DATABASE_HOST: str = os.getenv("DATABASE_HOST")
-    DATABASE_NAME: str = os.getenv("DATABASE_NAME")
-    DATABASE_PASSWORD: str = os.getenv("DATABASE_PASSWORD")
-    DATABASE_PORT: str = os.getenv("DATABASE_PORT")
-    DATABASE_USER: str = os.getenv("DATABASE_USER")
+    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST")
+    POSTGRES_DB: str = os.getenv("POSTGRES_DB")
+    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD")
+    POSTGRES_PORT: str = os.getenv("POSTGRES_PORT")
+    POSTGRES_USER: str = os.getenv("POSTGRES_USER")
 
     @computed_field
     @property
     def DATABASE_URL(self) -> str:
         return (
             f"postgresql+asyncpg://"
-            f"{self.DATABASE_USER}:"
-            f"{self.DATABASE_PASSWORD}@"
-            f"{self.DATABASE_HOST}:"
-            f"{self.DATABASE_PORT}/"
-            f"{self.DATABASE_NAME}"
+            f"{self.POSTGRES_USER}:"
+            f"{self.POSTGRES_PASSWORD}@"
+            f"{self.POSTGRES_HOST}:"
+            f"{self.POSTGRES_PORT}/"
+            f"{self.POSTGRES_DB}"
         )
 
 
