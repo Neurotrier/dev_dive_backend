@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+  db:
+    container_name: dev_dive_db
+    image: postgres:16
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_HOST=${DATABASE_HOST}
+    volumes:
+      - ~/dev_dive/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    networks:
+      - common_network
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - common_network
+    volumes:
+      - ./src:/src
+    ports:
+      - "8000:8000"
+    expose:
+      - "8000"
+    command: /code/start.sh
+
+networks:
+  common_network:
+    name: common_network
+    driver: bridge

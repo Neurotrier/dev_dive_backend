@@ -2,9 +2,9 @@ import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship, declared_attr
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column, relationship
 
-from src.models.base import Base
+from src.domen.models.base import Base
 
 if TYPE_CHECKING:
     from .user import User
@@ -24,5 +24,3 @@ class Vote(Base):
     @declared_attr
     def user(cls) -> Mapped["User"]:
         return relationship("User")
-
-
