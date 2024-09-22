@@ -5,6 +5,7 @@ Revises:
 Create Date: 2024-09-19 00:13:14.072679
 
 """
+
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -32,7 +33,10 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column(
-            "updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -42,7 +46,9 @@ def upgrade() -> None:
         sa.Column("info", sa.String(length=200), nullable=True),
         sa.Column("password", sa.LargeBinary(), nullable=False),
         sa.Column("email", sa.String(), nullable=False),
-        sa.Column("role", sa.Enum("ADMIN", "MODERATOR", "USER", name="role"), nullable=False),
+        sa.Column(
+            "role", sa.Enum("ADMIN", "MODERATOR", "USER", name="role"), nullable=False
+        ),
         sa.Column("is_banned", sa.Boolean(), nullable=False),
         sa.Column("reputation", sa.Integer(), nullable=False),
         sa.Column("id", sa.Uuid(), nullable=False),
@@ -53,7 +59,10 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column(
-            "updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("email"),
@@ -70,7 +79,10 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column(
-            "updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
@@ -90,7 +102,10 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column(
-            "updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
@@ -110,7 +125,10 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column(
-            "updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
         ),
         sa.ForeignKeyConstraint(
             ["user_id"],
@@ -131,7 +149,10 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column(
-            "updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
         ),
         sa.ForeignKeyConstraint(
             ["question_id"],
@@ -155,7 +176,10 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column(
-            "updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=True
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
         ),
         sa.ForeignKeyConstraint(
             ["question_id"],
