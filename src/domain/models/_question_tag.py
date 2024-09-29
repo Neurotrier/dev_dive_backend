@@ -3,7 +3,7 @@ import uuid
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.domen.models.base import Base
+from src.domain.models.base import Base
 
 
 class QuestionTag(Base):

@@ -7,25 +7,44 @@ services:
       - common_network
     env_file:
       - .env
-    volumes:
-      - ~/app/postgres:/var/lib/postgresql/data
+#    volumes:
+#      - ~/app/postgres:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     expose:
       - "5432"
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+
+  redis:
+    image: redis:7.2
+    container_name: "redis"
     networks:
       - common_network
-    volumes:
-      - ./src:/src
     ports:
-      - "8000:8000"
+      - "6379:6379"
     expose:
-      - "8000"
-    command: /code/start.sh
+      - "6379"
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+#    volumes:
+#      - ~/app/redis:/var/lib/redis/data
+#  api:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    networks:
+#      - common_network
+#    volumes:
+#      - ./src:/src
+#    ports:
+#      - "8000:8000"
+#    expose:
+#      - "8000"
+#    command: /code/start.sh
 
 networks:
   common_network:
