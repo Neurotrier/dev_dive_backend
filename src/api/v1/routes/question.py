@@ -1,13 +1,18 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, status, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 
 from src.db.session import DBSession
 from src.domain.schemas.question import QuestionCreate, QuestionUpdate
+from src.services.auth import AuthService
 from src.services.question import QuestionService
 
-router = APIRouter(prefix="/questions", tags=["questions"])
+router = APIRouter(
+    prefix="/questions",
+    tags=["questions"],
+    dependencies=[Depends(AuthService.access_jwt_required)],
+)
 
 
 @router.post(
@@ -36,9 +41,7 @@ async def get_question(db: DBSession, question_id: Annotated[UUID, Path()]):
 
     response = await _service.get_question(question_id=question_id)
     if not response:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="question not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
     else:
         return response
 
@@ -54,8 +57,20 @@ async def update_question(
 
     response = await _service.update_question(question_id=question_id, data=data)
     if not response:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="question not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
+    else:
+        return response
+
+
+@router.delete(
+    "/{question_id}/",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_question(db: DBSession, question_id: Annotated[UUID, Path()]):
+    _service = QuestionService(session=db)
+
+    response = await _service.delete_question(question_id=question_id)
+    if not response:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
     else:
         return response

@@ -15,7 +15,7 @@ class Answer(Base):
     content: Mapped[str] = mapped_column(String(1000))
 
     question_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("question.id"))
-    question: Mapped["Question"] = relationship("Question")
+    question: Mapped["Question"] = relationship("Question", back_populates="answers")
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
     user: Mapped["User"] = relationship("User")

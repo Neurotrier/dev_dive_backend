@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.domain.models import Base
 
 if TYPE_CHECKING:
+    from .answer import Answer
     from .user import User
 
 
@@ -16,3 +17,5 @@ class Question(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
     user: Mapped["User"] = relationship("User")
+
+    answers: Mapped[list["Answer"]] = relationship("Answer", back_populates="question")

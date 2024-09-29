@@ -1,13 +1,18 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, status, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 
 from src.db.session import DBSession
 from src.domain.schemas.answer import AnswerCreate, AnswerUpdate
 from src.services.answer import AnswerService
+from src.services.auth import AuthService
 
-router = APIRouter(prefix="/answers", tags=["answers"])
+router = APIRouter(
+    prefix="/answers",
+    tags=["answers"],
+    dependencies=[Depends(AuthService.access_jwt_required)],
+)
 
 
 @router.post(
@@ -36,9 +41,7 @@ async def get_answer(db: DBSession, answer_id: Annotated[UUID, Path()]):
 
     response = await _service.get_answer(answer_id=answer_id)
     if not response:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="answer not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="answer not found")
     else:
         return response
 
@@ -47,15 +50,25 @@ async def get_answer(db: DBSession, answer_id: Annotated[UUID, Path()]):
     "/{answer_id}/",
     status_code=status.HTTP_200_OK,
 )
-async def update_answer(
-    db: DBSession, answer_id: Annotated[UUID, Path()], data: AnswerUpdate
-):
+async def update_answer(db: DBSession, answer_id: Annotated[UUID, Path()], data: AnswerUpdate):
     _service = AnswerService(session=db)
 
     response = await _service.update_answer(answer_id=answer_id, data=data)
     if not response:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="answer not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="answer not found")
+    else:
+        return response
+
+
+@router.delete(
+    "/{answer_id}/",
+    status_code=status.HTTP_200_OK,
+)
+async def delete_answer(db: DBSession, answer_id: Annotated[UUID, Path()]):
+    _service = AnswerService(session=db)
+
+    response = await _service.delete_answer(answer_id=answer_id)
+    if not response:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Answer not found")
     else:
         return response

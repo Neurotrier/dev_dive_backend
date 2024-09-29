@@ -27,3 +27,8 @@ class AnswerService:
         )
         await self.repository.commit()
         return answer
+
+    async def delete_answer(self, answer_id: UUID):
+        answer_id = await self.repository.delete_answer(answer_id=answer_id)
+        await self.repository.commit()
+        return answer_id

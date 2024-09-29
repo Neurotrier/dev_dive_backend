@@ -21,6 +21,11 @@ python-multipart = "^0.0.9"
 fastapi-jwt-auth2 = "^0.5.0"
 pydantic-settings = "^2.5.2"
 pre-commit = "^3.8.0"
+redis = "^5.1.0"
+
+
+[tool.isort]
+profile = "black"
 
 
 [build-system]

@@ -2,8 +2,8 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.domain.schemas.tag import TagCreate, TagUpdate
 from src.domain.models import Tag
+from src.domain.schemas.tag import TagCreate, TagUpdate
 from src.repositories.tag import TagRepository
 
 
@@ -28,3 +28,8 @@ class TagService:
         )
         await self.repository.commit()
         return tag
+
+    async def delete_tag(self, tag_id: UUID):
+        tag_id = await self.repository.delete_tag(tag_id=tag_id)
+        await self.repository.commit()
+        return tag_id
