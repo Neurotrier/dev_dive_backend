@@ -13,8 +13,20 @@
 - Docker Compose
 - Black + Isort + Mypy
 
-## Database Schema and User Roles
-#### You can find it here: https://drive.google.com/drive/folders/1cQf850SrOaV7ylaP537uy-gp5M5kXU0B?dmr=1&ec=wgc-drive-globalnav-goto
+## Database ERD
+![ERD](docs/DB_ERD.png)
+
+## Use-Case Diagrams: 
+ ### User Scenario
+   ![User Scenario](docs/User_role.png)
+ ### Moderator Scenario
+   ![Moderator Scenario](docs/Moderator_role.png)
+ ### Admin Scenario
+   ![Admin Scenario](docs/Admin_role.png)
+ ### Question Scenario
+   ![Question Scenario](docs/Question.png)
+ ### Answer Scenario
+   ![Answer Scenario](docs/Answer.png)
 
 ## Set up with Docker Compose:
 1) Go to terminal
