@@ -1,7 +1,7 @@
 import os
+import tomllib
 from pathlib import Path
 
-import tomllib
 from dotenv import load_dotenv
 from fastapi_jwt_auth2 import AuthJWT
 from pydantic import computed_field
@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     REDIS_PORT: int = os.getenv("REDIS_PORT")
     CACHE_NAME: str = os.getenv("CACHE_NAME")
 
+    MINIO_HOST: str = os.getenv("MINIO_HOST")
+    MINIO_PORT: int = os.getenv("MINIO_PORT")
+    ACCESS_KEY: str = os.getenv("ACCESS_KEY")
+    SECRET_KEY: str = os.getenv("SECRET_KEY")
+    BUCKET_NAME: str = os.getenv("BUCKET_NAME")
+
     @computed_field
     @property
     def DATABASE_URL(self) -> str:
@@ -55,10 +61,10 @@ class Settings(BaseSettings):
             f"{self.POSTGRES_DB}"
         )
 
+    @computed_field
+    @property
+    def MINIO_URL(self) -> str:
+        return f"{self.MINIO_HOST}:{self.MINIO_PORT}"
+
 
 settings = Settings()
-
-
-@AuthJWT.load_config
-def get_config():
-    return Settings()

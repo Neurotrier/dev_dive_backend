@@ -14,3 +14,4 @@ class User(Base):
     role: Mapped[Role] = mapped_column(default=Role.USER)
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
     reputation: Mapped[int] = mapped_column(Integer, default=0)
+    image_url: Mapped[str] = mapped_column(String(200), nullable=True)
