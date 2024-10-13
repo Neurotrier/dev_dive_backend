@@ -4,12 +4,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from managers.redis_manager import RedisManager
 from src.domain.models.user import User
+from src.managers import RedisManager
 from src.repositories.base import BaseRepository
 
 
 class AuthRepository(BaseRepository[User]):
+
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, User)
 
@@ -20,10 +21,13 @@ class AuthRepository(BaseRepository[User]):
         return user
 
     async def get_user_by_email(self, email: str) -> User | None:
-        stmt = select(User).where(User.email == email)
-        res = await self._session.execute(stmt)
-        user = res.scalar_one_or_none()
-        return user
+        try:
+            stmt = select(User).where(User.email == email)
+            res = await self._session.execute(stmt)
+            user = res.scalar_one_or_none()
+            return user
+        except Exception:
+            return None
 
     def check_is_valid(self, payload: dict, redis_manager: RedisManager):
         jti = payload["jti"]

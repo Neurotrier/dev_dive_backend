@@ -11,7 +11,9 @@ class RedisManager:
         cache_name: str = settings.CACHE_NAME,
         ttl: int = settings.refresh_token_ttl_min,
     ):
-        self.redisClient = redis.StrictRedis(host=host, port=port, decode_responses=True)
+        self.redisClient = redis.StrictRedis(
+            host=host, port=port, decode_responses=True
+        )
         self.cache_name = cache_name
         self.redisClient.expire(cache_name, ttl)
 

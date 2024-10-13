@@ -8,10 +8,11 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
-from managers.redis_manager import RedisManager
 from src.core.config import settings
+from src.core.logger import logger
 from src.domain.models import User
 from src.domain.schemas.auth import AuthSignup, TokenInfo
+from src.managers import RedisManager
 from src.repositories.auth import AuthRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/signin/")
@@ -57,7 +58,9 @@ class AuthService:
                 detail="Refresh jwt token is required",
             )
 
-        is_valid = self.repository.check_is_valid(payload=payload, redis_manager=redis_manager)
+        is_valid = self.repository.check_is_valid(
+            payload=payload, redis_manager=redis_manager
+        )
         if is_valid:
             access_token = self.__encode_jwt(
                 payload=payload, expire_minutes=settings.access_token_ttl_min
@@ -88,9 +91,12 @@ class AuthService:
             jwt.DecodeError,
             jwt.InvalidTokenError,
         ):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid jwt token")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid jwt token"
+            )
         except Exception as e:
-            raise e
+            logger.error("Error in access_jwt_required")
+            logger.error(str(e))
 
     def __make_jwt_payload(self, user: User) -> dict:
         payload = {
@@ -142,6 +148,7 @@ class AuthService:
         secret_key: str = settings.authjwt_secret_key,
         algorithm: str = settings.algorithm,
     ) -> dict:
+
         decoded = jwt.decode(
             token,
             key=secret_key,
