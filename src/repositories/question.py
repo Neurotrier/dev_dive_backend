@@ -6,6 +6,7 @@ from sqlalchemy.orm import defer, load_only, selectinload
 
 from src.domain.models import Answer, Downvote, QuestionTag, Tag, Upvote, User
 from src.domain.models.question import Question
+from src.domain.schemas.question import QuestionsGetWithFilters
 from src.repositories.base import BaseRepository
 
 
@@ -33,7 +34,9 @@ class QuestionRepository(BaseRepository[Question]):
                 selectinload(Question.user).options(load_only(User.username)),
                 selectinload(Question.answers)
                 .options(load_only(Answer.id, Answer.content))
-                .options(selectinload(Answer.user).options(load_only(User.id, User.username))),
+                .options(
+                    selectinload(Answer.user).options(load_only(User.id, User.username))
+                ),
             )
             .where(Question.id == question_id)
         )
@@ -65,6 +68,27 @@ class QuestionRepository(BaseRepository[Question]):
                 answer.downvotes = downvotes
 
         return question
+
+    async def get_questions(self, filters: QuestionsGetWithFilters):
+        page_size = 20
+
+        query = select(Question).options(
+            selectinload(Question.tags).options(load_only(Tag.id, Tag.name)),
+            selectinload(Question.user).options(load_only(User.id, User.username)),
+        )
+
+        if filters.tag:
+            query = query.join(Question.tags).where(Tag.name == filters.tag)
+
+        total_query = select(func.count(Question.id))
+        total = await self._session.scalar(total_query)
+
+        query = query.offset((filters.page - 1) * page_size).limit(page_size)
+        results = await self._session.execute(query)
+
+        items = results.scalars().all()
+        pages = (total + page_size - 1) // page_size
+        return pages, items
 
     async def delete_question(self, question_id: UUID) -> UUID | None:
         record = await self.get_by_pk(id=question_id)
