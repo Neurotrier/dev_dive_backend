@@ -8,4 +8,4 @@ def setup_logger(logger_name=""):
     return logging.getLogger(logger_name)
 
 
-logger = setup_logger()
+logger = setup_logger("fastapi_logger")
