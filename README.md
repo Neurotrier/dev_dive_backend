@@ -45,3 +45,5 @@ docker compose up --build
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 7) Go to `0.0.0.0:8000/docs` in your browser - SwaggerAPI
+You need to create a new account if you dont have any or use existing one to sign in.
+Only then you will be able to successfully send requests via SwaggerUI
