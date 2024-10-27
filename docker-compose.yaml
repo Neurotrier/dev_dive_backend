@@ -7,8 +7,8 @@ services:
       - common_network
     env_file:
       - .env
-#    volumes:
-#      - ~/app/postgres:/var/lib/postgresql/data
+    volumes:
+      - ~/app/postgres:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     expose:
@@ -30,8 +30,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-#    volumes:
-#      - ~/app/redis:/var/lib/redis/data
+    volumes:
+      - ~/app/redis:/var/lib/redis/data
+
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - .env
+    environment:
+      MINIO_ROOT_USER: ${ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${SECRET_KEY}
+    volumes:
+      - ~/app/minio:/data
+    command: server /data --console-address ":9001"
+
 #  api:
 #    build:
 #      context: .

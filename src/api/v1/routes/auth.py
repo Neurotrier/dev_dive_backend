@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.responses import JSONResponse
 
-from managers.redis_manager import RedisManager
 from src.db.session import DBSession
 from src.domain.schemas.auth import AuthSignup
+from src.managers import RedisManager
 from src.services.auth import AuthService
+from src.core.logger import logger
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -23,12 +24,16 @@ async def signup(
         if response:
             return response
         else:
+            print(logger.name)
+            logger.error("User with this email already exists")
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"detail": "User with this email already exists"},
             )
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.post("/signin/", status_code=status.HTTP_200_OK)
@@ -48,7 +53,9 @@ async def signin(
                 content={"detail": "User does not exist"},
             )
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
 
 
 @router.post("/refresh-token/", status_code=status.HTTP_200_OK)
@@ -59,7 +66,9 @@ async def refresh_token(
     _service = AuthService(session=db)
     try:
         token = refresh[7:].strip()
-        response = await _service.refresh_token(refresh_token=token, redis_manager=RedisManager())
+        response = await _service.refresh_token(
+            refresh_token=token, redis_manager=RedisManager()
+        )
         return response
     except Exception as e:
         raise e

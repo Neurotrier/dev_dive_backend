@@ -59,7 +59,9 @@ async def get_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
 
     response = await _service.get_upvote(vote_id=upvote_id)
     if not response:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Upvote not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Upvote not found"
+        )
     else:
         return response
 
@@ -73,7 +75,9 @@ async def get_downvote(db: DBSession, downvote_id: Annotated[UUID, Path()]):
 
     response = await _service.get_downvote(vote_id=downvote_id)
     if not response:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Downvote not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Downvote not found"
+        )
     else:
         return response
 
@@ -87,7 +91,9 @@ async def delete_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
 
     response = await _service.delete_upvote(vote_id=upvote_id)
     if not response:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Upvote not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Upvote not found"
+        )
     else:
         return response
 
@@ -101,6 +107,8 @@ async def delete_downvote(db: DBSession, downvote_id: Annotated[UUID, Path()]):
 
     response = await _service.delete_downvote(vote_id=downvote_id)
     if not response:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Downvote not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Downvote not found"
+        )
     else:
         return response

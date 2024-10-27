@@ -1,12 +1,11 @@
-from collections import Counter
 from uuid import UUID
 
-import bcrypt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.models import Answer, Question
 from src.domain.models.user import User
+from src.managers import minio_manager
 from src.repositories.base import BaseRepository
 
 
@@ -37,8 +36,17 @@ class UserRepository(BaseRepository[User]):
         res = await self._session.execute(stmt)
         last_three_answers = res.scalars().all()
 
+        if user.image_url:
+            object_name = "/".join(user.image_url.split("/")[1:])
+            presigned_url = minio_manager.generate_presigned_url(
+                object_name=object_name
+            )
+        else:
+            presigned_url = None
+
         return {
             "user": user,
             "questions": last_three_questions,
             "answers": last_three_answers,
+            "presigned_url": presigned_url,
         }

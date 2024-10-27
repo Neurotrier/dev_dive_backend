@@ -15,6 +15,11 @@ class QuestionGet(BaseModel):
     content: str
 
 
+class QuestionsGetWithFilters(BaseModel):
+    page: int
+    tag: str | None = None
+
+
 class QuestionWithTagsGet(QuestionGet):
     tags: list
 

@@ -26,7 +26,7 @@ async def create_tag(db: DBSession, data: TagCreate):
     if not response:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Could not create tag",
+            detail="Could not create tag, it should have a unique name!",
         )
     else:
         return response
@@ -41,7 +41,9 @@ async def get_tag(db: DBSession, tag_id: Annotated[UUID, Path()]):
 
     response = await _service.get_tag(tag_id=tag_id)
     if not response:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tag not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="tag not found"
+        )
     else:
         return response
 
@@ -55,7 +57,9 @@ async def update_tag(db: DBSession, tag_id: Annotated[UUID, Path()], data: TagUp
 
     response = await _service.update_tag(tag_id=tag_id, data=data)
     if not response:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tag not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="tag not found"
+        )
     else:
         return response
 
@@ -69,6 +73,8 @@ async def delete_tag(db: DBSession, tag_id: Annotated[UUID, Path()]):
 
     response = await _service.delete_tag(tag_id=tag_id)
     if not response:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="tag not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="tag not found"
+        )
     else:
         return response

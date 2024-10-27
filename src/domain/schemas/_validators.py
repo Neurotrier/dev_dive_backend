@@ -7,7 +7,9 @@ from starlette import status
 def check_email(email: str) -> str:
     email_pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-]+\.[a-zA-Z0-9-]+$"
     if re.match(email_pattern, email) is None:
-        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email!")
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email format!"
+        )
     return email
 
 
@@ -17,7 +19,7 @@ def check_password(password: str) -> str:
         if ord(symbol) in forbidden_symbols:
             raise HTTPException(
                 status_code=status.HTTP_406_NOT_ACCEPTABLE,
-                detail="Forbidden symbols in password",
+                detail="Forbidden symbols in password!",
             )
     if len(password) < 8:
         raise HTTPException(

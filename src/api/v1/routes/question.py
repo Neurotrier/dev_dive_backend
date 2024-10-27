@@ -1,10 +1,14 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
 from src.db.session import DBSession
-from src.domain.schemas.question import QuestionCreate, QuestionUpdate
+from src.domain.schemas.question import (
+    QuestionCreate,
+    QuestionsGetWithFilters,
+    QuestionUpdate,
+)
 from src.services.auth import AuthService
 from src.services.question import QuestionService
 
@@ -21,7 +25,6 @@ router = APIRouter(
 )
 async def create_question(db: DBSession, data: QuestionCreate):
     _service = QuestionService(session=db)
-
     response = await _service.create_question(data=data)
     if not response:
         raise HTTPException(
@@ -33,15 +36,36 @@ async def create_question(db: DBSession, data: QuestionCreate):
 
 
 @router.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+)
+async def get_questions(
+    db: DBSession,
+    page: int = Query(1),
+    tag: Optional[str] = Query(None),
+):
+    _service = QuestionService(session=db)
+    filters = QuestionsGetWithFilters(page=page, tag=tag)
+    response = await _service.get_questions(filters=filters)
+    if not response:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Questions not found"
+        )
+    else:
+        return response
+
+
+@router.get(
     "/{question_id}/",
     status_code=status.HTTP_200_OK,
 )
 async def get_question(db: DBSession, question_id: Annotated[UUID, Path()]):
     _service = QuestionService(session=db)
-
     response = await _service.get_question(question_id=question_id)
     if not response:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Question not found"
+        )
     else:
         return response
 
@@ -51,13 +75,22 @@ async def get_question(db: DBSession, question_id: Annotated[UUID, Path()]):
     status_code=status.HTTP_200_OK,
 )
 async def update_question(
-    db: DBSession, question_id: Annotated[UUID, Path()], data: QuestionUpdate
+    db: DBSession,
+    question_id: Annotated[UUID, Path()],
+    data: QuestionUpdate,
+    is_question_owner: bool = Depends(AuthService.is_question_owner),
 ):
-    _service = QuestionService(session=db)
+    if not is_question_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
+    _service = QuestionService(session=db)
     response = await _service.update_question(question_id=question_id, data=data)
     if not response:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Question not found"
+        )
     else:
         return response
 
@@ -66,11 +99,21 @@ async def update_question(
     "/{question_id}/",
     status_code=status.HTTP_200_OK,
 )
-async def delete_question(db: DBSession, question_id: Annotated[UUID, Path()]):
-    _service = QuestionService(session=db)
+async def delete_question(
+    db: DBSession,
+    question_id: Annotated[UUID, Path()],
+    is_question_owner: bool = Depends(AuthService.is_question_owner),
+):
+    if not is_question_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
+    _service = QuestionService(session=db)
     response = await _service.delete_question(question_id=question_id)
     if not response:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Question not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Question not found"
+        )
     else:
         return response

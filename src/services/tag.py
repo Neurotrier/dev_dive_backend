@@ -12,10 +12,13 @@ class TagService:
         self.repository = TagRepository(session)
 
     async def create_tag(self, data: TagCreate):
-        input_data = Tag(**data.dict())
-        tag = await self.repository.add(record=input_data)
-        await self.repository.commit()
-        return tag
+        try:
+            input_data = Tag(**data.dict())
+            tag = await self.repository.add(record=input_data)
+            await self.repository.commit()
+            return tag
+        except Exception:
+            return None
 
     async def get_tag(self, tag_id: UUID):
         tag = await self.repository.get_tag_with_questions(tag_id=tag_id)

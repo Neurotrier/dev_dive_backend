@@ -1,8 +1,8 @@
-"""create tables
+"""init
 
-Revision ID: e58e7ee8cc61
+Revision ID: 309782bf60cf
 Revises: 
-Create Date: 2024-09-19 00:13:14.072679
+Create Date: 2024-10-13 16:41:42.974751
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "e58e7ee8cc61"
+revision: str = "309782bf60cf"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -39,6 +39,7 @@ def upgrade() -> None:
             nullable=True,
         ),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("name"),
     )
     op.create_table(
         "user",
@@ -51,6 +52,7 @@ def upgrade() -> None:
         ),
         sa.Column("is_banned", sa.Boolean(), nullable=False),
         sa.Column("reputation", sa.Integer(), nullable=False),
+        sa.Column("image_url", sa.String(length=200), nullable=True),
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column(
             "created_at",
