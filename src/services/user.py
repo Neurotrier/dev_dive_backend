@@ -19,7 +19,7 @@ class UserService:
         return user
 
     async def update_user(
-        self, user_id: UUID, data: UserUpdate, image: Optional[UploadFile]
+        self, user_id: UUID, data: UserUpdate, image: Optional[UploadFile] = None
     ):
         try:
             image_url = None
@@ -30,7 +30,7 @@ class UserService:
                 )
 
             user = await self.repository.update(
-                {**data.dict(), "image_url": image_url},
+                {**data.model_dump(), "image_url": image_url},
                 id=user_id,
             )
 

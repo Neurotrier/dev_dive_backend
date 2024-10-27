@@ -1,9 +1,10 @@
-from typing import Annotated, Optional, Union
+from typing import Annotated, List, Optional, Union
 from uuid import UUID
 
 from fastapi import (
     APIRouter,
     Depends,
+    File,
     Form,
     HTTPException,
     Path,
@@ -48,10 +49,15 @@ async def get_user(
 async def update_user(
     db: DBSession,
     user_id: Annotated[UUID, Path()],
+    is_owner: Annotated[bool, AuthService.is_owner],
     image: Optional[UploadFile] = None,
     username: Annotated[Union[str, None], Form()] = None,
     info: Annotated[Union[str, None], Form()] = None,
 ):
+    if not is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
     _service = UserService(session=db)
 
     data = UserUpdate(username=username, info=info)

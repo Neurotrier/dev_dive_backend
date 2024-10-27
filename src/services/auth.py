@@ -10,10 +10,14 @@ from starlette import status
 
 from src.core.config import settings
 from src.core.logger import logger
+from src.core.role import Role
+from src.db.session import DBSession
 from src.domain.models import User
 from src.domain.schemas.auth import AuthSignup, TokenInfo
 from src.managers import RedisManager
+from src.repositories.answer import AnswerRepository
 from src.repositories.auth import AuthRepository
+from src.repositories.question import QuestionRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/signin/")
 
@@ -79,7 +83,7 @@ class AuthService:
     @classmethod
     def access_jwt_required(cls, token: str = Depends(oauth2_scheme)):
         try:
-            payload = cls.__decode_jwt(token=token)
+            payload = cls.decode_jwt(token=token)
             if payload.get("status") != "access":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -142,7 +146,7 @@ class AuthService:
         )
 
     @classmethod
-    def __decode_jwt(
+    def decode_jwt(
         self,
         token: str | bytes,
         secret_key: str = settings.authjwt_secret_key,
@@ -155,3 +159,96 @@ class AuthService:
             algorithms=[algorithm],
         )
         return decoded
+
+    @classmethod
+    def is_owner(cls, user_id: uuid.UUID, token: str = Depends(oauth2_scheme)):
+        try:
+            payload = cls.decode_jwt(token=token)
+            if user_id != payload["user_id"]:
+                return False
+            return True
+        except (
+            jwt.ExpiredSignatureError,
+            jwt.InvalidTokenError,
+            jwt.DecodeError,
+            jwt.InvalidTokenError,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
+            )
+
+    @classmethod
+    def is_moderator(cls, token: str = Depends(oauth2_scheme)):
+        try:
+            payload = cls.decode_jwt(token=token)
+            if payload["role"] != Role.MODERATOR:
+                return False
+            return True
+        except (
+            jwt.ExpiredSignatureError,
+            jwt.InvalidTokenError,
+            jwt.DecodeError,
+            jwt.InvalidTokenError,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
+            )
+
+    @classmethod
+    def is_admin(cls, token: str = Depends(oauth2_scheme)):
+        try:
+            payload = cls.decode_jwt(token=token)
+            if payload["role"] != Role.ADMIN:
+                return False
+            return True
+        except (
+            jwt.ExpiredSignatureError,
+            jwt.InvalidTokenError,
+            jwt.DecodeError,
+            jwt.InvalidTokenError,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
+            )
+
+    @classmethod
+    async def is_question_owner(
+        cls, question_id: uuid.UUID, db: DBSession, token: str = Depends(oauth2_scheme)
+    ):
+        try:
+            payload = cls.decode_jwt(token=token)
+            question_repository = QuestionRepository(session=db)
+            question = await question_repository.get_question(question_id=question_id)
+            if str(question.user.id) != payload["user_id"]:
+                return False
+            return True
+        except (
+            jwt.ExpiredSignatureError,
+            jwt.InvalidTokenError,
+            jwt.DecodeError,
+            jwt.InvalidTokenError,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
+            )
+
+    @classmethod
+    async def is_answer_owner(
+        cls, answer_id: uuid.UUID, db: DBSession, token: str = Depends(oauth2_scheme)
+    ):
+        try:
+            payload = cls.decode_jwt(token=token)
+            answer_repository = AnswerRepository(session=db)
+            answer = await answer_repository.get_answer(answer_id=answer_id)
+            if str(answer.user.id) != payload["user_id"]:
+                return False
+            return True
+        except (
+            jwt.ExpiredSignatureError,
+            jwt.InvalidTokenError,
+            jwt.DecodeError,
+            jwt.InvalidTokenError,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
+            )

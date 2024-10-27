@@ -8,6 +8,7 @@ from src.db.session import DBSession
 from src.domain.schemas.auth import AuthSignup
 from src.managers import RedisManager
 from src.services.auth import AuthService
+from src.core.logger import logger
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -23,6 +24,8 @@ async def signup(
         if response:
             return response
         else:
+            print(logger.name)
+            logger.error("User with this email already exists")
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"detail": "User with this email already exists"},
