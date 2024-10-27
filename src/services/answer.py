@@ -17,8 +17,8 @@ class AnswerService:
         await self.repository.commit()
         return answer
 
-    async def get_answer(self, answer_id: UUID) -> AnswerGet:
-        return await self.repository.get_by_pk(id=answer_id)
+    async def get_answer(self, answer_id: UUID):
+        return await self.repository.get_answer(answer_id=answer_id)
 
     async def update_answer(self, answer_id: UUID, data: AnswerUpdate) -> Answer:
         answer = await self.repository.update(
