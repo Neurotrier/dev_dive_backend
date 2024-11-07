@@ -38,10 +38,10 @@ async def create_answer(db: DBSession, data: AnswerCreate):
 )
 async def get_answer(db: DBSession, answer_id: Annotated[UUID, Path()]):
     _service = AnswerService(session=db)
-    response = await _service.get_answer(answer_id=answer_id)
+    response = await _service.get_answer_with_user(answer_id=answer_id)
     if not response:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="answer not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Answer not found"
         )
     else:
         return response
@@ -55,7 +55,7 @@ async def update_answer(
     db: DBSession,
     answer_id: Annotated[UUID, Path()],
     data: AnswerUpdate,
-    is_answer_owner: bool = Depends(AuthService.is_answer_owner),
+    is_answer_owner: Annotated[bool, Depends(AuthService.is_answer_owner)],
 ):
     if not is_answer_owner:
         raise HTTPException(
@@ -66,7 +66,7 @@ async def update_answer(
     response = await _service.update_answer(answer_id=answer_id, data=data)
     if not response:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="answer not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Answer not found"
         )
     else:
         return response
@@ -79,7 +79,7 @@ async def update_answer(
 async def delete_answer(
     db: DBSession,
     answer_id: Annotated[UUID, Path()],
-    is_answer_owner: bool = Depends(AuthService.is_answer_owner),
+    is_answer_owner: Annotated[bool, Depends(AuthService.is_answer_owner)],
 ):
     if not is_answer_owner:
         raise HTTPException(

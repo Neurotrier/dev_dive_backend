@@ -1,7 +1,9 @@
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.logger import logger
 from src.domain.models import Tag
 from src.domain.schemas.tag import TagCreate, TagUpdate
 from src.repositories.tag import TagRepository
@@ -13,12 +15,14 @@ class TagService:
 
     async def create_tag(self, data: TagCreate):
         try:
-            input_data = Tag(**data.dict())
+            input_data = Tag(**data.model_dump())
             tag = await self.repository.add(record=input_data)
             await self.repository.commit()
             return tag
-        except Exception:
+        except IntegrityError:
             return None
+        except Exception as e:
+            logger.error(str(e))
 
     async def get_tag(self, tag_id: UUID):
         tag = await self.repository.get_tag_with_questions(tag_id=tag_id)
@@ -26,7 +30,7 @@ class TagService:
 
     async def update_tag(self, tag_id: UUID, data: TagUpdate):
         tag = await self.repository.update(
-            data.dict(),
+            data=data.model_dump(),
             id=tag_id,
         )
         await self.repository.commit()

@@ -14,8 +14,12 @@ if TYPE_CHECKING:
 class Answer(Base):
     content: Mapped[str] = mapped_column(String(1000))
 
-    question_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("question.id"))
+    question_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("question.id", ondelete="CASCADE")
+    )
     question: Mapped["Question"] = relationship("Question", back_populates="answers")
 
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
-    user: Mapped["User"] = relationship("User")
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE")
+    )
+    user: Mapped["User"] = relationship("User", back_populates="answers")

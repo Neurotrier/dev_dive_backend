@@ -23,10 +23,10 @@ router = APIRouter(
 async def create_upvote(db: DBSession, data: UpvoteCreate):
     _service = UpvoteService(session=db)
 
-    response = await _service.create_upvote(data=data)
+    response = await _service.create_upvote(data=data, session=db)
     if not response:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not create upvote",
         )
     else:
@@ -40,10 +40,10 @@ async def create_upvote(db: DBSession, data: UpvoteCreate):
 async def create_downvote(db: DBSession, data: DownvoteCreate):
     _service = DownvoteService(session=db)
 
-    response = await _service.create_downvote(data=data)
+    response = await _service.create_downvote(data=data, session=db)
     if not response:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not create downvote",
         )
     else:
@@ -57,7 +57,7 @@ async def create_downvote(db: DBSession, data: DownvoteCreate):
 async def get_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
     _service = UpvoteService(session=db)
 
-    response = await _service.get_upvote(vote_id=upvote_id)
+    response = await _service.get_upvote(upvote_id=upvote_id)
     if not response:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Upvote not found"
@@ -73,7 +73,7 @@ async def get_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
 async def get_downvote(db: DBSession, downvote_id: Annotated[UUID, Path()]):
     _service = DownvoteService(session=db)
 
-    response = await _service.get_downvote(vote_id=downvote_id)
+    response = await _service.get_downvote(downvote_id=downvote_id)
     if not response:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Downvote not found"
@@ -89,7 +89,7 @@ async def get_downvote(db: DBSession, downvote_id: Annotated[UUID, Path()]):
 async def delete_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
     _service = UpvoteService(session=db)
 
-    response = await _service.delete_upvote(vote_id=upvote_id)
+    response = await _service.delete_upvote(upvote_id=upvote_id, session=db)
     if not response:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Upvote not found"
@@ -105,7 +105,7 @@ async def delete_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
 async def delete_downvote(db: DBSession, downvote_id: Annotated[UUID, Path()]):
     _service = DownvoteService(session=db)
 
-    response = await _service.delete_downvote(vote_id=downvote_id)
+    response = await _service.delete_downvote(downvote_id=downvote_id, session=db)
     if not response:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Downvote not found"

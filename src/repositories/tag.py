@@ -10,6 +10,7 @@ from src.repositories.base import BaseRepository
 
 
 class TagRepository(BaseRepository[Tag]):
+
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Tag)
 
@@ -37,16 +38,14 @@ class TagRepository(BaseRepository[Tag]):
         if record is not None:
             stmt = select(QuestionTag.question_id).filter(QuestionTag.tag_id == tag_id)
             res = await self._session.execute(stmt)
-            questions_id = res.fetchall()
+            questions_id = res.scalars().all()
 
-            stmt = delete(QuestionTag).filter(QuestionTag.tag_id == tag_id)
-            await self._session.execute(stmt)
+            await self._session.delete(record)
 
             stmt = delete(Question).filter(Question.id.in_(questions_id))
             await self._session.execute(stmt)
+            await self._session.commit()
 
-            stmt = delete(self._model).filter_by(id=record.id)
-            await self._session.execute(stmt)
             return record.id
 
         return None

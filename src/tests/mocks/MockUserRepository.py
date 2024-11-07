@@ -1,6 +1,8 @@
 class MockUserRepository:
     def __init__(self):
-        self.users = {"1": {"username": "bob", "id": "1", 'info': None, 'image_url': None}}
+        self.users = {
+            "1": {"username": "bob", "id": "1", "info": None, "image_url": None}
+        }
         self.committed = False
         self.rolled_back = False
 
@@ -19,4 +21,3 @@ class MockUserRepository:
 
     async def rollback(self):
         self.rolled_back = True
-

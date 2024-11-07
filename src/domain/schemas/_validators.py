@@ -3,6 +3,8 @@ import re
 from fastapi import HTTPException
 from starlette import status
 
+from src.core.role import Role
+
 
 def check_email(email: str) -> str:
     email_pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-]+\.[a-zA-Z0-9-]+$"
@@ -36,3 +38,12 @@ def check_username(username: str) -> str:
             detail="The length of your username should be at most 30 characters!",
         )
     return username
+
+
+def check_role(role: Role) -> Role:
+    if role == Role.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Policy denied",
+        )
+    return role

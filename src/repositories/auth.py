@@ -29,7 +29,7 @@ class AuthRepository(BaseRepository[User]):
         except Exception:
             return None
 
-    def check_is_valid(self, payload: dict, redis_manager: RedisManager):
+    def check_is_valid(self, payload: dict, redis_manager: RedisManager) -> bool:
         jti = payload["jti"]
         if redis_manager.redisClient.hget(name=redis_manager.cache_name, key=jti):
             raise HTTPException(

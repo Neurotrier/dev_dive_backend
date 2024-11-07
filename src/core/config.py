@@ -3,7 +3,6 @@ import tomllib
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi_jwt_auth2 import AuthJWT
 from pydantic import computed_field
 from pydantic_settings import BaseSettings
 
@@ -24,6 +23,9 @@ class Settings(BaseSettings):
     PROJECT_VERSION: str = project_version
     PROJECT_DESCRIPTION: str = project_description
     PROJECT_AUTHOR: str = project_author
+
+    UPVOTE_VALUE: int = os.getenv("UPVOTE_VALUE")
+    DOWNVOTE_VALUE: int = os.getenv("DOWNVOTE_VALUE")
 
     DEBUG: bool = os.getenv("DEBUG", False)
 

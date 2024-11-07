@@ -1,12 +1,12 @@
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Union
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 
 from src.db.session import DBSession
 from src.domain.schemas.question import (
     QuestionCreate,
-    QuestionsGetWithFilters,
+    QuestionsWithFiltersGet,
     QuestionUpdate,
 )
 from src.services.auth import AuthService
@@ -41,11 +41,15 @@ async def create_question(db: DBSession, data: QuestionCreate):
 )
 async def get_questions(
     db: DBSession,
-    page: int = Query(1),
-    tag: Optional[str] = Query(None),
+    limit: Optional[int] = Query(50, gt=0),
+    offset: Optional[int] = Query(1, gt=0),
+    tags: list[Optional[str]] = Query(None),
+    content: Optional[str] = Query(None),
 ):
     _service = QuestionService(session=db)
-    filters = QuestionsGetWithFilters(page=page, tag=tag)
+    filters = QuestionsWithFiltersGet(
+        limit=limit, offset=offset, tags=tags, content=content
+    )
     response = await _service.get_questions(filters=filters)
     if not response:
         raise HTTPException(
@@ -61,7 +65,9 @@ async def get_questions(
 )
 async def get_question(db: DBSession, question_id: Annotated[UUID, Path()]):
     _service = QuestionService(session=db)
-    response = await _service.get_question(question_id=question_id)
+    response = await _service.get_question_with_tags_and_answers(
+        question_id=question_id
+    )
     if not response:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Question not found"
@@ -78,7 +84,7 @@ async def update_question(
     db: DBSession,
     question_id: Annotated[UUID, Path()],
     data: QuestionUpdate,
-    is_question_owner: bool = Depends(AuthService.is_question_owner),
+    is_question_owner: Annotated[bool, Depends(AuthService.is_question_owner)],
 ):
     if not is_question_owner:
         raise HTTPException(
@@ -102,7 +108,7 @@ async def update_question(
 async def delete_question(
     db: DBSession,
     question_id: Annotated[UUID, Path()],
-    is_question_owner: bool = Depends(AuthService.is_question_owner),
+    is_question_owner: Annotated[bool, Depends(AuthService.is_question_owner)],
 ):
     if not is_question_owner:
         raise HTTPException(

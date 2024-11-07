@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class QuestionCreate(BaseModel):
@@ -15,9 +15,11 @@ class QuestionGet(BaseModel):
     content: str
 
 
-class QuestionsGetWithFilters(BaseModel):
-    page: int
-    tag: str | None = None
+class QuestionsWithFiltersGet(BaseModel):
+    limit: int = Field(default=20, gt=0, le=150)
+    offset: int = Field(default=1, gt=0)
+    tags: list[str] | None = None
+    content: str | None = None
 
 
 class QuestionWithTagsGet(QuestionGet):

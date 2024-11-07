@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timedelta
+from typing import Optional
 
 import bcrypt
 import jwt
@@ -14,10 +15,12 @@ from src.core.role import Role
 from src.db.session import DBSession
 from src.domain.models import User
 from src.domain.schemas.auth import AuthSignup, TokenInfo
+from src.domain.schemas.user import UserGet
 from src.managers import RedisManager
 from src.repositories.answer import AnswerRepository
 from src.repositories.auth import AuthRepository
 from src.repositories.question import QuestionRepository
+from src.repositories.user import UserRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/signin/")
 
@@ -26,16 +29,16 @@ class AuthService:
     def __init__(self, session: AsyncSession):
         self.repository = AuthRepository(session)
 
-    async def signup(self, data: AuthSignup):
+    async def signup(self, data: AuthSignup) -> Optional[UserGet]:
         user = await self.repository.get_user_by_email(email=data.email)
         if user:
             return None
-        input_data = User(**data.dict())
+        input_data = User(**data.model_dump())
         user = await self.repository.create_user(input_data)
         await self.repository.commit()
-        return user
+        return UserRepository.to_schema(user)
 
-    async def signin(self, data: OAuth2PasswordRequestForm):
+    async def signin(self, data: OAuth2PasswordRequestForm) -> Optional[TokenInfo]:
         user = await self.repository.get_user_by_email(email=data.username)
         if user:
             payload = self.__make_jwt_payload(user=user)
@@ -54,8 +57,10 @@ class AuthService:
             )
         return None
 
-    async def refresh_token(self, refresh_token: str, redis_manager: RedisManager):
-        payload = AuthService.__decode_jwt(token=refresh_token)
+    async def refresh_token(
+        self, refresh_token: str, redis_manager: RedisManager
+    ) -> TokenInfo:
+        payload = AuthService.decode_jwt(token=refresh_token)
         if payload.get("status") != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -161,10 +166,10 @@ class AuthService:
         return decoded
 
     @classmethod
-    def is_owner(cls, user_id: uuid.UUID, token: str = Depends(oauth2_scheme)):
+    def is_owner(cls, user_id: uuid.UUID, token: str = Depends(oauth2_scheme)) -> bool:
         try:
             payload = cls.decode_jwt(token=token)
-            if user_id != payload["user_id"]:
+            if str(user_id) != payload["user_id"]:
                 return False
             return True
         except (
@@ -178,10 +183,10 @@ class AuthService:
             )
 
     @classmethod
-    def is_moderator(cls, token: str = Depends(oauth2_scheme)):
+    def is_moderator(cls, token: str = Depends(oauth2_scheme)) -> bool:
         try:
             payload = cls.decode_jwt(token=token)
-            if payload["role"] != Role.MODERATOR:
+            if payload["role"] not in (Role.MODERATOR, Role.ADMIN):
                 return False
             return True
         except (
@@ -195,7 +200,7 @@ class AuthService:
             )
 
     @classmethod
-    def is_admin(cls, token: str = Depends(oauth2_scheme)):
+    def is_admin(cls, token: str = Depends(oauth2_scheme)) -> bool:
         try:
             payload = cls.decode_jwt(token=token)
             if payload["role"] != Role.ADMIN:
@@ -214,12 +219,12 @@ class AuthService:
     @classmethod
     async def is_question_owner(
         cls, question_id: uuid.UUID, db: DBSession, token: str = Depends(oauth2_scheme)
-    ):
+    ) -> bool:
         try:
             payload = cls.decode_jwt(token=token)
             question_repository = QuestionRepository(session=db)
-            question = await question_repository.get_question(question_id=question_id)
-            if str(question.user.id) != payload["user_id"]:
+            question = await question_repository.get_by_pk(id=question_id)
+            if str(question.user_id) != payload["user_id"]:
                 return False
             return True
         except (
@@ -235,12 +240,12 @@ class AuthService:
     @classmethod
     async def is_answer_owner(
         cls, answer_id: uuid.UUID, db: DBSession, token: str = Depends(oauth2_scheme)
-    ):
+    ) -> bool:
         try:
             payload = cls.decode_jwt(token=token)
             answer_repository = AnswerRepository(session=db)
-            answer = await answer_repository.get_answer(answer_id=answer_id)
-            if str(answer.user.id) != payload["user_id"]:
+            answer = await answer_repository.get_by_pk(id=answer_id)
+            if str(answer.user_id) != payload["user_id"]:
                 return False
             return True
         except (
