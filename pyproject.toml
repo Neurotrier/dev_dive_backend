@@ -18,13 +18,14 @@ black = "^24.8.0"
 isort = "^5.13.2"
 bcrypt = "^4.2.0"
 python-multipart = "^0.0.9"
-fastapi-jwt-auth2 = "^0.5.0"
 pydantic-settings = "^2.5.2"
 pre-commit = "^3.8.0"
 redis = "^5.1.0"
 minio = "^7.2.9"
 pytest = "^8.3.3"
 pytest-asyncio = "^0.24.0"
+pyjwt = "^2.9.0"
+websockets = "^13.1"
 
 
 [tool.isort]
