@@ -15,7 +15,11 @@ class Question(Base):
     tags = relationship("Tag", secondary="question_tag", back_populates="questions")
     content: Mapped[str] = mapped_column(String(1000))
 
-    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
-    user: Mapped["User"] = relationship("User")
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("user.id", ondelete="CASCADE")
+    )
+    user: Mapped["User"] = relationship("User", back_populates="questions")
 
-    answers: Mapped[list["Answer"]] = relationship("Answer", back_populates="question")
+    answers: Mapped[list["Answer"]] = relationship(
+        "Answer", back_populates="question", cascade="all, delete-orphan"
+    )

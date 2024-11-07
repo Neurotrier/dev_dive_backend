@@ -19,7 +19,7 @@ class Vote(Base):
 
     @declared_attr
     def user_id(cls) -> Mapped[uuid.UUID]:
-        return mapped_column(ForeignKey("user.id"))
+        return mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
 
     @declared_attr
     def user(cls) -> Mapped["User"]:

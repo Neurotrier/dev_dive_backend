@@ -9,5 +9,7 @@ class Tag(Base):
     description: Mapped[str] = mapped_column(String(200))
 
     questions = relationship(
-        "Question", secondary="question_tag", back_populates="tags"
+        "Question",
+        secondary="question_tag",
+        back_populates="tags",
     )
