@@ -45,3 +45,12 @@ docker compose up --build
 uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 7) Go to `0.0.0.0:8000/docs` in your browser - SwaggerAPI
+### You need to create a new account if you dont have any or use existing one to sign in.
+### Only then you will be able to successfully send requests via SwaggerUI
+
+## Remote connection
+### We use Ngrok! All you need to to is to login in https://ngrok.com/ using your github account or email, then follow this article https://habr.com/en/articles/674070/. You just need to open tcp ports and start your application! 
+
+## Enjoy!
+
+

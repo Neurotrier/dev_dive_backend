@@ -23,6 +23,12 @@ class TagWithQuestionsGet(TagGet):
     questions: list[QuestionGet]
 
 
+class TagWithQuestionsCountGet(BaseModel):
+    id: UUID
+    name: str
+    questions_count: int
+
+
 class TagUpdate(BaseModel):
     name: str | None = None
     description: str | None = None

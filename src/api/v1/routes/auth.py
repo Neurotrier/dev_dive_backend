@@ -4,11 +4,11 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from starlette.responses import JSONResponse
 
+from src.core.logger import logger
 from src.db.session import DBSession
 from src.domain.schemas.auth import AuthSignup
 from src.managers import RedisManager
 from src.services.auth import AuthService
-from src.core.logger import logger
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -41,7 +41,6 @@ async def signin(
     data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: DBSession,
 ):
-    print(data)
     _service = AuthService(session=db)
     try:
         response = await _service.signin(data=data)

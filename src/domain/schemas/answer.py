@@ -16,5 +16,12 @@ class AnswerGet(BaseModel):
     content: str
 
 
+class AnswerWithUserGet(BaseModel):
+    id: UUID
+    question_id: UUID
+    content: str
+    user: dict
+
+
 class AnswerUpdate(BaseModel):
     content: str | None = None

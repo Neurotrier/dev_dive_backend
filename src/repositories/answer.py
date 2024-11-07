@@ -1,11 +1,12 @@
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import defer, load_only, selectinload
 
-from src.domain.models import Downvote, Upvote, User
+from src.domain.models import User
 from src.domain.models.answer import Answer
+from src.domain.schemas.answer import AnswerGet
 from src.repositories.base import BaseRepository
 
 
@@ -14,7 +15,7 @@ class AnswerRepository(BaseRepository[Answer]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Answer)
 
-    async def get_answer(self, answer_id: UUID) -> Answer | None:
+    async def get_answer_with_user(self, answer_id: UUID) -> Answer | None:
         stmt = (
             select(Answer)
             .options(
@@ -31,15 +32,18 @@ class AnswerRepository(BaseRepository[Answer]):
     async def delete_answer(self, answer_id: UUID) -> UUID | None:
         record = await self.get_by_pk(id=answer_id)
         if record is not None:
+            await self._session.delete(record)
+            await self._session.commit()
 
-            stmt = delete(Upvote).filter(Upvote.source_id == answer_id)
-            await self._session.execute(stmt)
-
-            stmt = delete(Downvote).filter(Downvote.source_id == answer_id)
-            await self._session.execute(stmt)
-
-            stmt = delete(self._model).filter_by(id=record.id)
-            await self._session.execute(stmt)
             return record.id
 
         return None
+
+    @staticmethod
+    def to_schema(answer: Answer) -> AnswerGet:
+        return AnswerGet(
+            id=answer.id,
+            content=answer.content,
+            user_id=answer.user_id,
+            question_id=answer.question_id,
+        )

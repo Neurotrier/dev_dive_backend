@@ -1,16 +1,17 @@
 from uuid import UUID
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import defer, load_only, selectinload
 
 from src.domain.models import Answer, Downvote, QuestionTag, Tag, Upvote, User
 from src.domain.models.question import Question
-from src.domain.schemas.question import QuestionsGetWithFilters
+from src.domain.schemas.question import QuestionGet, QuestionsWithFiltersGet
 from src.repositories.base import BaseRepository
 
 
 class QuestionRepository(BaseRepository[Question]):
+
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Question)
 
@@ -24,14 +25,16 @@ class QuestionRepository(BaseRepository[Question]):
         res = await self._session.execute(stmt)
         return [dict(row) for row in res.mappings().all()]
 
-    async def get_question(self, question_id: UUID) -> Question | None:
+    async def get_question_with_tags_and_answers(
+        self, question_id: UUID
+    ) -> dict | None:
         # load a question with tags and answers
         stmt = (
             select(Question)
             .options(
                 selectinload(Question.tags).options(load_only(Tag.id, Tag.name)),
                 defer(Question.user_id),
-                selectinload(Question.user).options(load_only(User.username)),
+                selectinload(Question.user).options(load_only(User.id, User.username)),
                 selectinload(Question.answers)
                 .options(load_only(Answer.id, Answer.content))
                 .options(
@@ -44,6 +47,7 @@ class QuestionRepository(BaseRepository[Question]):
         res = await self._session.execute(stmt)
         question = res.scalar_one_or_none()
         if question:
+
             stmt = select(Upvote.user_id).where(Upvote.source_id == question_id)
             res = await self._session.execute(stmt)
             upvotes = [row[0] for row in res.fetchall()]
@@ -69,44 +73,64 @@ class QuestionRepository(BaseRepository[Question]):
 
         return question
 
-    async def get_questions(self, filters: QuestionsGetWithFilters):
-        page_size = 20
-
-        query = select(Question).options(
-            selectinload(Question.tags).options(load_only(Tag.id, Tag.name)),
-            selectinload(Question.user).options(load_only(User.id, User.username)),
+    async def get_questions(self, filters: QuestionsWithFiltersGet):
+        stmt = (
+            select(Question)
+            .distinct()
+            .options(
+                defer(Question.user_id),
+                selectinload(Question.tags).options(load_only(Tag.id, Tag.name)),
+                selectinload(Question.user).options(load_only(User.id, User.username)),
+            )
         )
 
-        if filters.tag:
-            query = query.join(Question.tags).where(Tag.name == filters.tag)
+        if filters.tags:
+            stmt = stmt.join(Question.tags).where(Tag.name.in_(filters.tags))
 
-        total_query = select(func.count(Question.id))
+        if filters.content:
+            stmt = (
+                stmt.add_columns(
+                    func.similarity(Question.content, text(":search_term")).label("sim")
+                )
+                .where(text("content % :search_term"))
+                .params(search_term=filters.content)
+                .order_by(
+                    func.similarity(Question.content, text(":search_term"))
+                    .params(search_term=filters.content)
+                    .desc()
+                )
+            )
+
+            total_query = (
+                select(func.count(Question.id))
+                .where(text("content % :search_term"))
+                .params(search_term=filters.content)
+            )
+
+        else:
+            total_query = select(func.count(Question.id))
+
         total = await self._session.scalar(total_query)
 
-        query = query.offset((filters.page - 1) * page_size).limit(page_size)
-        results = await self._session.execute(query)
+        stmt = stmt.offset((filters.offset - 1) * filters.limit).limit(filters.limit)
 
+        results = await self._session.execute(stmt)
         items = results.scalars().all()
-        pages = (total + page_size - 1) // page_size
-        return pages, items
+
+        return total, items
 
     async def delete_question(self, question_id: UUID) -> UUID | None:
         record = await self.get_by_pk(id=question_id)
         if record is not None:
-            stmt = delete(Answer).filter(Answer.question_id == question_id)
-            await self._session.execute(stmt)
+            await self._session.delete(record)
+            await self._session.commit()
 
-            stmt = delete(QuestionTag).filter(QuestionTag.question_id == question_id)
-            await self._session.execute(stmt)
-
-            stmt = delete(Upvote).filter(Upvote.source_id == question_id)
-            await self._session.execute(stmt)
-
-            stmt = delete(Downvote).filter(Downvote.source_id == question_id)
-            await self._session.execute(stmt)
-
-            stmt = delete(self._model).filter_by(id=record.id)
-            await self._session.execute(stmt)
             return record.id
 
         return None
+
+    @staticmethod
+    def to_schema(question: Question) -> QuestionGet:
+        return QuestionGet(
+            id=question.id, content=question.content, user_id=question.user_id
+        )

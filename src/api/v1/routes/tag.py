@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
 from src.db.session import DBSession
 from src.domain.schemas.tag import TagCreate, TagUpdate
@@ -25,7 +25,7 @@ async def create_tag(db: DBSession, data: TagCreate):
     response = await _service.create_tag(data=data)
     if not response:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not create tag, it should have a unique name!",
         )
     else:
@@ -46,6 +46,14 @@ async def get_tag(db: DBSession, tag_id: Annotated[UUID, Path()]):
         )
     else:
         return response
+
+
+@router.get("/", status_code=status.HTTP_200_OK)
+async def get_tags(
+    db: DBSession,
+    page: int = Query(1),
+):
+    pass
 
 
 @router.patch(
