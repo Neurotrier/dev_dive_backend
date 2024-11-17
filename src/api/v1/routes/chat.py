@@ -30,7 +30,6 @@ async def websocket_endpoint(
     _service_user = UserService(session=db)
 
     await websocket_manager.connect(websocket)
-    await asyncio.sleep(0)
     try:
         while True:
             user = await _service_user.get_user(user_id)
@@ -38,6 +37,10 @@ async def websocket_endpoint(
             if not data:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Empty message"
+                )
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
                 )
             chat_message = await _service_chat.create_chat_message(
                 message=json.loads(data)["data"], user_id=user.id
