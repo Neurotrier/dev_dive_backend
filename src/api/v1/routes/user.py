@@ -1,10 +1,9 @@
-from typing import Annotated, List, Optional, Union
+from typing import Annotated, Optional, Union
 from uuid import UUID
 
 from fastapi import (
     APIRouter,
     Depends,
-    File,
     Form,
     HTTPException,
     Path,
@@ -12,17 +11,12 @@ from fastapi import (
     status,
 )
 
-from src.core.role import Role
 from src.db.session import DBSession
 from src.domain.schemas.user import UserPoliciesUpdate, UserUpdate
 from src.services.auth import AuthService
 from src.services.user import UserService
 
-router = APIRouter(
-    prefix="/users",
-    tags=["users"],
-    dependencies=[Depends(AuthService.access_jwt_required)],
-)
+router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get(
@@ -51,6 +45,7 @@ async def update_user(
     db: DBSession,
     user_id: Annotated[UUID, Path()],
     is_owner: Annotated[bool, Depends(AuthService.is_owner)],
+    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
     image: Optional[UploadFile] = None,
     username: Annotated[Union[str, None], Form()] = None,
     info: Annotated[Union[str, None], Form()] = None,
@@ -77,6 +72,7 @@ async def update_user_policies(
     db: DBSession,
     user_id: Annotated[UUID, Path()],
     is_moderator: Annotated[bool, Depends(AuthService.is_moderator)],
+    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
     data: UserPoliciesUpdate,
 ):
     if not is_moderator:
@@ -103,6 +99,7 @@ async def delete_user(
     user_id: Annotated[UUID, Path()],
     is_owner: Annotated[bool, Depends(AuthService.is_owner)],
     is_moderator: Annotated[bool, Depends(AuthService.is_moderator)],
+    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
 ):
     if not is_owner and not is_moderator:
         raise HTTPException(

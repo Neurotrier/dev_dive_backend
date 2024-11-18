@@ -15,7 +15,6 @@ from src.services.question import QuestionService
 router = APIRouter(
     prefix="/questions",
     tags=["questions"],
-    dependencies=[Depends(AuthService.access_jwt_required)],
 )
 
 
@@ -23,7 +22,17 @@ router = APIRouter(
     "/",
     status_code=status.HTTP_200_OK,
 )
-async def create_question(db: DBSession, data: QuestionCreate):
+async def create_question(
+    db: DBSession,
+    data: QuestionCreate,
+    is_owner: Annotated[bool, Depends(AuthService.is_owner)],
+    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+):
+    if not is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
+
     _service = QuestionService(session=db)
     response = await _service.create_question(data=data)
     if not response:
@@ -85,6 +94,7 @@ async def update_question(
     question_id: Annotated[UUID, Path()],
     data: QuestionUpdate,
     is_question_owner: Annotated[bool, Depends(AuthService.is_question_owner)],
+    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
 ):
     if not is_question_owner:
         raise HTTPException(
@@ -109,6 +119,7 @@ async def delete_question(
     db: DBSession,
     question_id: Annotated[UUID, Path()],
     is_question_owner: Annotated[bool, Depends(AuthService.is_question_owner)],
+    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
 ):
     if not is_question_owner:
         raise HTTPException(

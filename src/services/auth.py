@@ -86,7 +86,7 @@ class AuthService:
             )
 
     @classmethod
-    def access_jwt_required(cls, token: str = Depends(oauth2_scheme)):
+    def access_jwt_required(cls, token: str = Depends(oauth2_scheme)) -> bool:
         try:
             payload = cls.decode_jwt(token=token)
             if payload.get("status") != "access":
@@ -94,6 +94,7 @@ class AuthService:
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Access jwt token is required",
                 )
+            return True
         except (
             jwt.ExpiredSignatureError,
             jwt.InvalidTokenError,

@@ -11,7 +11,6 @@ from src.services.tag import TagService
 router = APIRouter(
     prefix="/tags",
     tags=["tags"],
-    dependencies=[Depends(AuthService.access_jwt_required)],
 )
 
 
@@ -19,9 +18,18 @@ router = APIRouter(
     "/",
     status_code=status.HTTP_200_OK,
 )
-async def create_tag(db: DBSession, data: TagCreate):
-    _service = TagService(session=db)
+async def create_tag(
+    db: DBSession,
+    data: TagCreate,
+    is_moderator: Annotated[bool, Depends(AuthService.is_moderator)],
+    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+):
+    if not is_moderator:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
+    _service = TagService(session=db)
     response = await _service.create_tag(data=data)
     if not response:
         raise HTTPException(
@@ -72,9 +80,19 @@ async def get_tags(
     "/{tag_id}/",
     status_code=status.HTTP_200_OK,
 )
-async def update_tag(db: DBSession, tag_id: Annotated[UUID, Path()], data: TagUpdate):
-    _service = TagService(session=db)
+async def update_tag(
+    db: DBSession,
+    tag_id: Annotated[UUID, Path()],
+    data: TagUpdate,
+    is_moderator: Annotated[bool, Depends(AuthService.is_moderator)],
+    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+):
+    if not is_moderator:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
+    _service = TagService(session=db)
     response = await _service.update_tag(tag_id=tag_id, data=data)
     if not response:
         raise HTTPException(
@@ -88,9 +106,18 @@ async def update_tag(db: DBSession, tag_id: Annotated[UUID, Path()], data: TagUp
     "/{tag_id}/",
     status_code=status.HTTP_200_OK,
 )
-async def delete_tag(db: DBSession, tag_id: Annotated[UUID, Path()]):
-    _service = TagService(session=db)
+async def delete_tag(
+    db: DBSession,
+    tag_id: Annotated[UUID, Path()],
+    is_moderator: Annotated[bool, Depends(AuthService.is_moderator)],
+    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+):
+    if not is_moderator:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
+    _service = TagService(session=db)
     response = await _service.delete_tag(tag_id=tag_id)
     if not response:
         raise HTTPException(

@@ -1,9 +1,10 @@
-import asyncio
 import json
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     Query,
     WebSocket,
@@ -14,6 +15,7 @@ from fastapi import (
 from src.db.session import DBSession
 from src.domain.schemas.chat import RecentChatMessagesFiltersGet
 from src.managers.websocket_manager import websocket_manager
+from src.services.auth import AuthService
 from src.services.chat import ChatService
 from src.services.user import UserService
 
@@ -63,6 +65,7 @@ async def websocket_endpoint(
 @router.get("/")
 async def get_recent_chat_messages(
     db: DBSession,
+    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
     limit: int = Query(50),
     offset: int = Query(1),
 ):
