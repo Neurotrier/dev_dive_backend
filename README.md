@@ -10,6 +10,7 @@
 - Asyncpg + SQLAlchemy 2.x
 - Alembic
 - Redis
+- Celery
 - Docker Compose
 - Black + Isort + Mypy
 
@@ -29,28 +30,29 @@
    ![Answer Scenario](docs/Answer.png)
 
 ## Set up with Docker Compose:
-1) Go to terminal
-2) Clone repo
+1) Install uv using this installation guide:
+```
+https://docs.astral.sh/uv/getting-started/installation/
+```
+2) Go to terminal
+3) Clone repo
 ```
 git clone https://github.com/Neurotrier/dev_dive_backend.git
 ```
-3) Open dev_dive_backend folder
-4) Create `.env` file based on `.env.example`
-5) Start docker compose containers in terminal from current folder
+4) Open dev_dive_backend folder
+5) Create `.env` file based on `.env.example`
+6) Start docker compose containers in terminal from current folder
 ```
 docker compose up --build
 ```
-6) Start uvicorn
-```
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
 7) Go to `0.0.0.0:8000/docs` in your browser - SwaggerAPI
+
 ### You need to create a new account if you dont have any or use existing one to sign in.
 ### Only then you will be able to successfully send requests via SwaggerUI
 
 ## Remote connection
 ### We use Ngrok! All you need to to is to login in https://ngrok.com/ using your github account or email, then follow this article https://habr.com/en/articles/674070/. You just need to open tcp ports and start your application! 
 
-## Enjoy!
+### Enjoy!
 
 
