@@ -1,15 +1,7 @@
 from typing import Annotated, Optional, Union
 from uuid import UUID
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    Form,
-    HTTPException,
-    Path,
-    UploadFile,
-    status,
-)
+from fastapi import APIRouter, Depends, Form, HTTPException, Path, UploadFile, status
 
 from src.db.session import DBSession
 from src.domain.schemas.user import UserPoliciesUpdate, UserUpdate
