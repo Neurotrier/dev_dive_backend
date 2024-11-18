@@ -60,29 +60,39 @@ class AuthService:
     async def refresh_token(
         self, refresh_token: str, redis_manager: RedisManager
     ) -> TokenInfo:
-        payload = AuthService.decode_jwt(token=refresh_token)
-        if payload.get("status") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Refresh jwt token is required",
-            )
+        try:
+            payload = AuthService.decode_jwt(token=refresh_token)
+            if payload.get("status") != "refresh":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Refresh jwt token is required",
+                )
 
-        is_valid = self.repository.check_is_valid(
-            payload=payload, redis_manager=redis_manager
-        )
-        if is_valid:
-            access_token = self.__encode_jwt(
-                payload=payload, expire_minutes=settings.access_token_ttl_min
+            is_valid = self.repository.check_is_valid(
+                payload=payload, redis_manager=redis_manager
             )
-            refresh_token = self.__encode_jwt(
-                payload=payload,
-                expire_minutes=settings.refresh_token_ttl_min,
-                is_access=False,
-            )
-            return TokenInfo(
-                access_token=access_token,
-                refresh_token=refresh_token,
-                token_type=settings.token_type,
+            if is_valid:
+                access_token = self.__encode_jwt(
+                    payload=payload, expire_minutes=settings.access_token_ttl_min
+                )
+                refresh_token = self.__encode_jwt(
+                    payload=payload,
+                    expire_minutes=settings.refresh_token_ttl_min,
+                    is_access=False,
+                )
+                return TokenInfo(
+                    access_token=access_token,
+                    refresh_token=refresh_token,
+                    token_type=settings.token_type,
+                )
+        except (
+            jwt.ExpiredSignatureError,
+            jwt.InvalidTokenError,
+            jwt.DecodeError,
+            jwt.InvalidTokenError,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid jwt token"
             )
 
     @classmethod
@@ -154,11 +164,10 @@ class AuthService:
     @classmethod
     def decode_jwt(
         self,
-        token: str | bytes,
+        token: str,
         secret_key: str = settings.authjwt_secret_key,
         algorithm: str = settings.algorithm,
     ) -> dict:
-
         decoded = jwt.decode(
             token,
             key=secret_key,

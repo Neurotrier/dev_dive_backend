@@ -64,7 +64,7 @@ async def refresh_token(
 ):
     _service = AuthService(session=db)
     try:
-        token = refresh[7:].strip()
+        token = refresh.strip()
         response = await _service.refresh_token(
             refresh_token=token, redis_manager=RedisManager()
         )
