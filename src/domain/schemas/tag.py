@@ -1,8 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel
-
-from src.domain.schemas.question import QuestionGet
+from pydantic import BaseModel, Field
 
 
 class TagCreate(BaseModel):
@@ -14,13 +12,9 @@ class TagID(BaseModel):
     id: UUID
 
 
-class TagGet(TagID):
-    name: str
-    description: str
-
-
-class TagWithQuestionsGet(TagGet):
-    questions: list[QuestionGet]
+class TagsWithFiltersGet(BaseModel):
+    limit: int = Field(default=50, gt=0, le=150)
+    offset: int = Field(default=1, gt=0)
 
 
 class TagWithQuestionsCountGet(BaseModel):

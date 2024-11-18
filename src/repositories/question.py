@@ -15,15 +15,19 @@ class QuestionRepository(BaseRepository[Question]):
     def __init__(self, session: AsyncSession) -> None:
         super().__init__(session, Question)
 
-    async def create_question_tags(self, tags: list, question_id: UUID) -> list:
-        question_tags = []
-        for tag_id in tags:
-            question_tags.append(QuestionTag(question_id=question_id, tag_id=tag_id))
-        self._session.add_all(question_tags)
-
+    async def create_question_tags(self, tags: list, question_id: UUID) -> list | None:
         stmt = select(Tag.id, Tag.name).where(Tag.id.in_(tags))
         res = await self._session.execute(stmt)
-        return [dict(row) for row in res.mappings().all()]
+        tags = [dict(row) for row in res.mappings().all()]
+        if not tags:
+            return None
+
+        question_tags = []
+        for tag in tags:
+            question_tags.append(QuestionTag(question_id=question_id, tag_id=tag["id"]))
+        self._session.add_all(question_tags)
+
+        return tags
 
     async def get_question_with_tags_and_answers(
         self, question_id: UUID
@@ -73,7 +77,7 @@ class QuestionRepository(BaseRepository[Question]):
 
         return question
 
-    async def get_questions(self, filters: QuestionsWithFiltersGet):
+    async def get_questions(self, filters: QuestionsWithFiltersGet) -> dict:
         stmt = (
             select(Question)
             .distinct()
@@ -115,9 +119,9 @@ class QuestionRepository(BaseRepository[Question]):
         stmt = stmt.offset((filters.offset - 1) * filters.limit).limit(filters.limit)
 
         results = await self._session.execute(stmt)
-        items = results.scalars().all()
+        questions = results.scalars().all()
 
-        return total, items
+        return {"total": total, "questions": questions}
 
     async def delete_question(self, question_id: UUID) -> UUID | None:
         record = await self.get_by_pk(id=question_id)

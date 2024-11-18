@@ -1,7 +1,7 @@
-from typing import Annotated, Optional, Union
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
 from src.db.session import DBSession
 from src.domain.schemas.question import (
@@ -28,7 +28,7 @@ async def create_question(db: DBSession, data: QuestionCreate):
     response = await _service.create_question(data=data)
     if not response:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not create question",
         )
     else:

@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.logger import logger
 from src.domain.models import Tag
-from src.domain.schemas.tag import TagCreate, TagUpdate
+from src.domain.schemas.tag import TagCreate, TagsWithFiltersGet, TagUpdate
 from src.repositories.tag import TagRepository
 
 
@@ -28,13 +28,22 @@ class TagService:
         tag = await self.repository.get_tag_with_questions(tag_id=tag_id)
         return tag
 
+    async def get_tags(self, filters: TagsWithFiltersGet):
+        questions = await self.repository.get_tags(filters=filters)
+        return questions
+
     async def update_tag(self, tag_id: UUID, data: TagUpdate):
-        tag = await self.repository.update(
-            data=data.model_dump(),
-            id=tag_id,
-        )
-        await self.repository.commit()
-        return tag
+        try:
+            tag = await self.repository.update(
+                data=data.model_dump(),
+                id=tag_id,
+            )
+            await self.repository.commit()
+            return tag
+        except IntegrityError:
+            return None
+        except Exception as e:
+            logger.error(str(e))
 
     async def delete_tag(self, tag_id: UUID):
         tag_id = await self.repository.delete_tag(tag_id=tag_id)
