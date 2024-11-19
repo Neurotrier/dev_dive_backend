@@ -9,11 +9,11 @@ celery_app = Celery("celery", broker=settings.REDIS_URL, backend=settings.REDIS_
 celery_app.conf.beat_schedule = {
     "check_to_ban": {
         "task": "src.workers.tasks.user.check_to_ban",
-        "schedule": timedelta(seconds=30),
+        "schedule": timedelta(hours=3),
     },
     "check_to_make_moderator": {
         "task": "src.workers.tasks.user.check_to_make_moderator",
-        "schedule": timedelta(seconds=30),
+        "schedule": timedelta(hours=3),
     },
 }
 

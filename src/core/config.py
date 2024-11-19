@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY")
     BUCKET_NAME: str = os.getenv("BUCKET_NAME")
 
+    APP_PASSWORD: str = os.getenv("APP_PASSWORD")
+    EMAIL_ADDRESS: str = os.getenv("EMAIL_ADDRESS")
+    SMTP_SERVER: str = os.getenv("SMTP_SERVER")
+    SMTP_PORT: int = os.getenv("SMTP_PORT")
+
     @computed_field
     @property
     def ASYNC_DATABASE_URL(self) -> str:
