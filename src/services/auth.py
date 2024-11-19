@@ -14,7 +14,7 @@ from src.core.logger import logger
 from src.core.role import Role
 from src.db.session import DBSession
 from src.domain.models import User
-from src.domain.schemas.auth import AuthSignup, TokenInfo
+from src.domain.schemas.auth import AuthSignin, AuthSignup
 from src.domain.schemas.user import UserGet
 from src.managers import RedisManager
 from src.repositories.answer import AnswerRepository
@@ -38,7 +38,7 @@ class AuthService:
         await self.repository.commit()
         return UserRepository.to_schema(user)
 
-    async def signin(self, data: OAuth2PasswordRequestForm) -> Optional[TokenInfo]:
+    async def signin(self, data: OAuth2PasswordRequestForm) -> Optional[AuthSignin]:
         user = await self.repository.get_user_by_email(email=data.username)
         if user:
             payload = self.__make_jwt_payload(user=user)
@@ -50,16 +50,17 @@ class AuthService:
                 expire_minutes=settings.refresh_token_ttl_min,
                 is_access=False,
             )
-            return TokenInfo(
+            return AuthSignin(
                 access_token=access_token,
                 refresh_token=refresh_token,
                 token_type=settings.token_type,
+                user_id=user.id,
             )
         return None
 
     async def refresh_token(
         self, refresh_token: str, redis_manager: RedisManager
-    ) -> TokenInfo:
+    ) -> AuthSignin:
         try:
             payload = AuthService.decode_jwt(token=refresh_token)
             if payload.get("status") != "refresh":
@@ -80,10 +81,11 @@ class AuthService:
                     expire_minutes=settings.refresh_token_ttl_min,
                     is_access=False,
                 )
-                return TokenInfo(
+                return AuthSignin(
                     access_token=access_token,
                     refresh_token=refresh_token,
                     token_type=settings.token_type,
+                    user_id=payload["user_id"],
                 )
         except (
             jwt.ExpiredSignatureError,

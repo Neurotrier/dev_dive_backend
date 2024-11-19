@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from pydantic import AfterValidator, BaseModel
 
@@ -11,7 +12,8 @@ class AuthSignup(BaseModel):
     email: Annotated[str, AfterValidator(check_email)]
 
 
-class TokenInfo(BaseModel):
+class AuthSignin(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str
+    user_id: UUID
