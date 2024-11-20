@@ -96,6 +96,8 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid jwt token"
             )
+        except Exception as e:
+            logger.error(str(e))
 
     @classmethod
     def access_jwt_required(cls, token: str = Depends(oauth2_scheme)) -> bool:
@@ -199,6 +201,8 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
             )
+        except Exception as e:
+            logger.error(str(e))
 
     @classmethod
     async def is_moderator(cls, token: str = Depends(oauth2_scheme)) -> bool:
@@ -216,6 +220,8 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
             )
+        except Exception as e:
+            logger.error(str(e))
 
     @classmethod
     async def is_admin(cls, token: str = Depends(oauth2_scheme)) -> bool:
@@ -233,6 +239,8 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
             )
+        except Exception as e:
+            logger.error(str(e))
 
     @classmethod
     async def is_question_owner(
@@ -242,6 +250,10 @@ class AuthService:
             payload = cls.decode_jwt(token=token)
             question_repository = QuestionRepository(session=db)
             question = await question_repository.get_by_pk(id=question_id)
+            if question is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Question not found"
+                )
             if str(question.user_id) != payload["user_id"]:
                 return False
             return True
@@ -254,6 +266,10 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
             )
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            logger.error(str(e))
 
     @classmethod
     async def is_answer_owner(
@@ -263,6 +279,10 @@ class AuthService:
             payload = cls.decode_jwt(token=token)
             answer_repository = AnswerRepository(session=db)
             answer = await answer_repository.get_by_pk(id=answer_id)
+            if answer is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Answer not found"
+                )
             if str(answer.user_id) != payload["user_id"]:
                 return False
             return True
@@ -275,3 +295,7 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
             )
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            logger.error(str(e))
