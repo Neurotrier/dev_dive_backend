@@ -4,7 +4,7 @@ from typing import Optional
 
 import bcrypt
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
@@ -178,8 +178,14 @@ class AuthService:
         return decoded
 
     @classmethod
-    def is_owner(cls, user_id: uuid.UUID, token: str = Depends(oauth2_scheme)) -> bool:
+    async def is_owner(
+        cls, request: Request, token: str = Depends(oauth2_scheme)
+    ) -> bool:
         try:
+            res = await request.json()
+            user_id = res.get("user_id", None)
+            if user_id is None:
+                return False
             payload = cls.decode_jwt(token=token)
             if str(user_id) != payload["user_id"]:
                 return False
@@ -195,7 +201,7 @@ class AuthService:
             )
 
     @classmethod
-    def is_moderator(cls, token: str = Depends(oauth2_scheme)) -> bool:
+    async def is_moderator(cls, token: str = Depends(oauth2_scheme)) -> bool:
         try:
             payload = cls.decode_jwt(token=token)
             if payload["role"] not in (Role.MODERATOR, Role.ADMIN):
@@ -212,7 +218,7 @@ class AuthService:
             )
 
     @classmethod
-    def is_admin(cls, token: str = Depends(oauth2_scheme)) -> bool:
+    async def is_admin(cls, token: str = Depends(oauth2_scheme)) -> bool:
         try:
             payload = cls.decode_jwt(token=token)
             if payload["role"] != Role.ADMIN:
