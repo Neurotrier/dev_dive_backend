@@ -1,5 +1,5 @@
-import uuid
 from typing import Annotated, Union
+from uuid import UUID
 
 from pydantic import AfterValidator, BaseModel
 
@@ -11,7 +11,7 @@ from src.domain.schemas.tag import TagWithQuestionsCountGet
 
 
 class UserGet(BaseModel):
-    id: uuid.UUID
+    id: UUID
     username: str
     info: str | None
     email: str
@@ -27,6 +27,7 @@ class UserPersonalDataGet(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    user_id: UUID
     username: str | None = None
     info: str | None = None
 

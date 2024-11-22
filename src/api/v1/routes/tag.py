@@ -22,7 +22,7 @@ async def create_tag(
     db: DBSession,
     data: TagCreate,
     is_moderator: Annotated[bool, Depends(AuthService.is_moderator)],
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
     if not is_moderator:
         raise HTTPException(
@@ -85,7 +85,7 @@ async def update_tag(
     tag_id: Annotated[UUID, Path()],
     data: TagUpdate,
     is_moderator: Annotated[bool, Depends(AuthService.is_moderator)],
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
     if not is_moderator:
         raise HTTPException(
@@ -110,7 +110,7 @@ async def delete_tag(
     db: DBSession,
     tag_id: Annotated[UUID, Path()],
     is_moderator: Annotated[bool, Depends(AuthService.is_moderator)],
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
     if not is_moderator:
         raise HTTPException(

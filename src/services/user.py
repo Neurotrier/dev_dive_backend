@@ -54,19 +54,19 @@ class UserService:
         return None
 
     async def update_user(
-        self, user_id: UUID, data: UserUpdate, image: Optional[UploadFile] = None
+        self, data: UserUpdate, image: Optional[UploadFile] = None
     ) -> UserGet:
         try:
             image_url = None
             if image:
-                object_name = f"{user_id}/{image.filename}"
+                object_name = f"{data.user_id}/{image.filename}"
                 image_url = await minio_manager.upload_image(
                     object_name=object_name, file=image
                 )
 
             user = await self.repository.update(
-                {**data.model_dump(), "image_url": image_url},
-                id=user_id,
+                {**data.model_dump(exclude={"user_id"}), "image_url": image_url},
+                id=data.user_id,
             )
 
             await self.repository.commit()

@@ -25,9 +25,9 @@ router = APIRouter(
 async def create_question(
     db: DBSession,
     data: QuestionCreate,
-    is_owner: Annotated[bool, Depends(AuthService.is_owner)],
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    token: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
+    is_owner = await AuthService.is_owner(data=data, token=token)
     if not is_owner:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
@@ -94,7 +94,7 @@ async def update_question(
     question_id: Annotated[UUID, Path()],
     data: QuestionUpdate,
     is_question_owner: Annotated[bool, Depends(AuthService.is_question_owner)],
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
     if not is_question_owner:
         raise HTTPException(
@@ -119,7 +119,7 @@ async def delete_question(
     db: DBSession,
     question_id: Annotated[UUID, Path()],
     is_question_owner: Annotated[bool, Depends(AuthService.is_question_owner)],
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
     if not is_question_owner:
         raise HTTPException(

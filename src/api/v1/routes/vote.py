@@ -22,9 +22,9 @@ router = APIRouter(
 async def create_upvote(
     db: DBSession,
     data: UpvoteCreate,
-    is_owner: Annotated[bool, Depends(AuthService.is_owner)],
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    token: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
+    is_owner = await AuthService.is_owner(data=data, token=token)
     if not is_owner:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
@@ -48,9 +48,9 @@ async def create_upvote(
 async def create_downvote(
     db: DBSession,
     data: DownvoteCreate,
-    is_owner: Annotated[bool, Depends(AuthService.is_owner)],
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    token: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
+    is_owner = await AuthService.is_owner(data=data, token=token)
     if not is_owner:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
@@ -106,10 +106,15 @@ async def get_downvote(db: DBSession, downvote_id: Annotated[UUID, Path()]):
 async def delete_upvote(
     db: DBSession,
     upvote_id: Annotated[UUID, Path()],
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    is_upvote_owner: Annotated[bool, Depends(AuthService.is_upvote_owner)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
-    _service = UpvoteService(session=db)
+    if not is_upvote_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
+    _service = UpvoteService(session=db)
     response = await _service.delete_upvote(upvote_id=upvote_id, session=db)
     if not response:
         raise HTTPException(
@@ -126,8 +131,13 @@ async def delete_upvote(
 async def delete_downvote(
     db: DBSession,
     downvote_id: Annotated[UUID, Path()],
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    is_downvote_owner: Annotated[bool, Depends(AuthService.is_downvote_owner)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
+    if not is_downvote_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
     _service = DownvoteService(session=db)
 
     response = await _service.delete_downvote(downvote_id=downvote_id, session=db)

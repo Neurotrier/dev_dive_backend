@@ -66,7 +66,7 @@ async def websocket_endpoint(
 @router.get("/")
 async def get_recent_chat_messages(
     db: DBSession,
-    _: Annotated[bool, Depends(AuthService.access_jwt_required)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
     limit: int = Query(50),
     offset: int = Query(1),
 ):
