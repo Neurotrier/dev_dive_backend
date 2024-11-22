@@ -23,12 +23,12 @@ def user_service(mock_repo):
 
 @pytest.mark.asyncio
 async def test_get_user(user_service, mock_repo):
-    user_id = "1"
+    user_id = "4b6a57ef-0105-484f-afd8-4f7f3c08cf7e"
     result = await user_service.get_user(user_id=user_id)
 
     mock_user_data = {
         "username": "bob",
-        "id": "1",
+        "id": "4b6a57ef-0105-484f-afd8-4f7f3c08cf7e",
         "info": None,
         "image_url": None,
         "is_banned": False,
@@ -40,13 +40,14 @@ async def test_get_user(user_service, mock_repo):
 
 @pytest.mark.asyncio
 async def test_update_user(user_service, mock_repo):
-    user_id = "1"
-    data = UserUpdate(username="bobr", info="Hello")
-    result = await user_service.update_user(user_id=user_id, data=data)
+    data = UserUpdate(
+        username="bobr", info="Hello", user_id="4b6a57ef-0105-484f-afd8-4f7f3c08cf7e"
+    )
+    result = await user_service.update_user(data=data)
 
     mock_user_data = {
         "username": "bobr",
-        "id": "1",
+        "id": "4b6a57ef-0105-484f-afd8-4f7f3c08cf7e",
         "info": "Hello",
         "image_url": None,
         "is_banned": False,
@@ -58,13 +59,13 @@ async def test_update_user(user_service, mock_repo):
 
 @pytest.mark.asyncio
 async def test_update_user_policies(user_service, mock_repo):
-    user_id = "1"
+    user_id = "4b6a57ef-0105-484f-afd8-4f7f3c08cf7e"
     data = UserPoliciesUpdate(is_banned=True, role=Role.USER)
     result = await user_service.update_user_policies(user_id=user_id, data=data)
 
     mock_user_data = {
         "username": "bobr",
-        "id": "1",
+        "id": "4b6a57ef-0105-484f-afd8-4f7f3c08cf7e",
         "info": "Hello",
         "image_url": None,
         "is_banned": True,
@@ -76,8 +77,8 @@ async def test_update_user_policies(user_service, mock_repo):
 
 @pytest.mark.asyncio
 async def test_delete_user(user_service, mock_repo):
-    user_id = "2"
+    user_id = "a2319134-5801-43c0-bd21-5c62f901f33c"
     result = await user_service.delete_user(user_id=user_id)
 
-    mock_user_data = "2"
+    mock_user_data = "a2319134-5801-43c0-bd21-5c62f901f33c"
     assert result == mock_user_data

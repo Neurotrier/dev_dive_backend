@@ -8,6 +8,7 @@ class MockUserRepository:
         return self.users.get(id)
 
     async def update(self, data, id):
+        id = str(id)
         if id in self.users:
             user = self.users.get(id)
             user.update(data)
