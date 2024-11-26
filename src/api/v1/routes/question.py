@@ -54,10 +54,11 @@ async def get_questions(
     offset: Optional[int] = Query(1, gt=0),
     tags: list[Optional[str]] = Query(None),
     content: Optional[str] = Query(None),
+    user_id: Optional[UUID] = Query(None),
 ):
     _service = QuestionService(session=db)
     filters = QuestionsWithFiltersGet(
-        limit=limit, offset=offset, tags=tags, content=content
+        limit=limit, offset=offset, tags=tags, content=content, user_id=user_id
     )
     response = await _service.get_questions(filters=filters)
     if not response:

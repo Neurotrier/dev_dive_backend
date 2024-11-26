@@ -33,44 +33,61 @@ class QuestionRepository(BaseRepository[Question]):
         self, question_id: UUID
     ) -> dict | None:
         # load a question with tags and answers
+        latest_answer_subquery = (
+            select(func.max(Answer.updated_at))
+            .where(Answer.question_id == Question.id)
+            .correlate(Question)
+            .scalar_subquery()
+        )
+
         stmt = (
             select(Question)
             .options(
                 selectinload(Question.tags).options(load_only(Tag.id, Tag.name)),
                 defer(Question.user_id),
                 selectinload(Question.user).options(load_only(User.id, User.username)),
-                selectinload(Question.answers)
-                .options(load_only(Answer.id, Answer.content))
-                .options(
-                    selectinload(Answer.user).options(load_only(User.id, User.username))
+                selectinload(Question.answers).options(
+                    defer(Answer.user_id),
+                    selectinload(Answer.user).options(
+                        load_only(User.id, User.username)
+                    ),
                 ),
             )
             .where(Question.id == question_id)
+            .order_by(latest_answer_subquery.desc())
         )
 
         res = await self._session.execute(stmt)
         question = res.scalar_one_or_none()
         if question:
 
-            stmt = select(Upvote.user_id).where(Upvote.source_id == question_id)
+            stmt = select(func.count(Upvote.user_id)).where(
+                Upvote.source_id == question_id
+            )
             res = await self._session.execute(stmt)
-            upvotes = [row[0] for row in res.fetchall()]
+            upvotes = res.scalar_one_or_none()
 
-            stmt = select(Downvote.user_id).where(Upvote.source_id == question_id)
+            stmt = select(func.count(Downvote.user_id)).where(
+                Downvote.source_id == question_id
+            )
             res = await self._session.execute(stmt)
-            downvotes = [row[0] for row in res.fetchall()]
+            downvotes = res.scalar_one_or_none()
 
             question.upvotes = upvotes
             question.downvotes = downvotes
 
             for answer in question.answers:
-                stmt = select(Upvote.user_id).where(Upvote.source_id == answer.id)
+                stmt = select(func.count(Upvote.user_id)).where(
+                    Upvote.source_id == answer.id
+                )
                 res = await self._session.execute(stmt)
-                upvotes = [row[0] for row in res.fetchall()]
+                upvotes = res.scalar_one_or_none()
 
-                stmt = select(Downvote.user_id).where(Downvote.source_id == answer.id)
+                stmt = select(func.count(Downvote.user_id)).where(
+                    Downvote.source_id == answer.id
+                )
                 res = await self._session.execute(stmt)
-                downvotes = [row[0] for row in res.fetchall()]
+                downvotes = res.scalar_one_or_none()
 
                 answer.upvotes = upvotes
                 answer.downvotes = downvotes
@@ -87,6 +104,9 @@ class QuestionRepository(BaseRepository[Question]):
                 selectinload(Question.user).options(load_only(User.id, User.username)),
             )
         )
+
+        if filters.user_id:
+            stmt = stmt.where(Question.user_id == filters.user_id)
 
         if filters.tags:
             stmt = stmt.join(Question.tags).where(Tag.name.in_(filters.tags))
@@ -114,9 +134,18 @@ class QuestionRepository(BaseRepository[Question]):
         else:
             total_query = select(func.count(Question.id))
 
-        total = await self._session.scalar(total_query)
+        if filters.user_id:
+            total_query = total_query.where(Question.user_id == filters.user_id)
 
-        stmt = stmt.offset((filters.offset - 1) * filters.limit).limit(filters.limit)
+        if filters.tags:
+            total_query = total_query.join(Question.tags).where(Tag.name.in_(filters.tags))
+
+        total = await self._session.scalar(total_query)
+        stmt = (
+            stmt.order_by(Question.updated_at.desc())
+            .offset((filters.offset - 1) * filters.limit)
+            .limit(filters.limit)
+        )
 
         results = await self._session.execute(stmt)
         questions = results.scalars().all()

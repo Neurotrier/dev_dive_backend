@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
 from src.db.session import DBSession
 from src.domain.schemas.vote import DownvoteCreate, UpvoteCreate
@@ -68,13 +68,19 @@ async def create_downvote(
 
 
 @router.get(
-    "/upvote/{upvote_id}/",
+    "/upvote/",
     status_code=status.HTTP_200_OK,
 )
-async def get_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
+async def get_upvote(
+    db: DBSession,
+    user_id: Annotated[UUID, Query()],
+    source_id: Annotated[UUID, Query()],
+):
     _service = UpvoteService(session=db)
 
-    response = await _service.get_upvote(upvote_id=upvote_id)
+    response = await _service.get_upvote_by_user_and_source(
+        user_id=user_id, source_id=source_id
+    )
     if not response:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Upvote not found"
@@ -84,13 +90,19 @@ async def get_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
 
 
 @router.get(
-    "/downvote/{downvote_id}/",
+    "/downvote/",
     status_code=status.HTTP_200_OK,
 )
-async def get_downvote(db: DBSession, downvote_id: Annotated[UUID, Path()]):
+async def get_downvote(
+    db: DBSession,
+    user_id: Annotated[UUID, Query()],
+    source_id: Annotated[UUID, Query()],
+):
     _service = DownvoteService(session=db)
 
-    response = await _service.get_downvote(downvote_id=downvote_id)
+    response = await _service.get_downvote_by_user_and_source(
+        user_id=user_id, source_id=source_id
+    )
     if not response:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Downvote not found"

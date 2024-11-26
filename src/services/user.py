@@ -29,6 +29,8 @@ class UserService:
         if res:
             return UserPersonalDataGet(
                 user=self.repository.to_schema(res["user"]),
+                total_questions=res["total_questions"],
+                total_answers=res["total_answers"],
                 questions=[
                     QuestionRepository.to_schema(question)
                     for question in res["questions"]

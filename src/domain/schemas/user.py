@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Union
 from uuid import UUID
 
@@ -16,10 +17,14 @@ class UserGet(BaseModel):
     info: str | None
     email: str
     reputation: int
+    role: Role
+    created_at: datetime
 
 
 class UserPersonalDataGet(BaseModel):
     user: UserGet
+    total_questions: int | None
+    total_answers: int | None
     questions: list[QuestionGet]
     answers: list[AnswerGet]
     tags: list[TagWithQuestionsCountGet]

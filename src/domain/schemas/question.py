@@ -23,6 +23,7 @@ class QuestionsWithFiltersGet(BaseModel):
     offset: int = Field(default=1, gt=0)
     tags: list[str] | None = None
     content: str | None = None
+    user_id: UUID | None = None
 
 
 class QuestionWithTagsGet(QuestionGet):

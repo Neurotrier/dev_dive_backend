@@ -23,7 +23,7 @@ class UserRepository(BaseRepository[User]):
         stmt = (
             select(Question)
             .filter(Question.user_id == user_id)
-            .order_by(Question.created_at.desc())
+            .order_by(Question.updated_at.desc())
             .limit(3)
         )
         res = await self._session.execute(stmt)
@@ -32,7 +32,7 @@ class UserRepository(BaseRepository[User]):
         stmt = (
             select(Answer)
             .filter(Answer.user_id == user_id)
-            .order_by(Answer.created_at.desc())
+            .order_by(Answer.updated_at.desc())
             .limit(3)
         )
         res = await self._session.execute(stmt)
@@ -68,8 +68,18 @@ class UserRepository(BaseRepository[User]):
         else:
             presigned_url = None
 
+        stmt = select(func.count(Question.id)).where(Question.user_id == user_id)
+        res = await self._session.execute(stmt)
+        total_questions = res.scalar_one_or_none()
+
+        stmt = select(func.count(Answer.id)).where(Answer.user_id == user_id)
+        res = await self._session.execute(stmt)
+        total_answers = res.scalar_one_or_none()
+
         return {
             "user": user,
+            "total_questions": total_questions,
+            "total_answers": total_answers,
             "questions": last_three_questions,
             "answers": last_three_answers,
             "tags": best_three_tags,
@@ -101,4 +111,6 @@ class UserRepository(BaseRepository[User]):
             email=user.email,
             info=user.info,
             reputation=user.reputation,
+            role=user.role,
+            created_at=user.created_at,
         )
