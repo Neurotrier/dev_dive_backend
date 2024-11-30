@@ -55,7 +55,7 @@ async def websocket_endpoint(
                 "created_at": chat_message.created_at.isoformat(),
             }
             await websocket_manager.broadcast(
-                current_connection=websocket, message=message
+                message=message
             )
     except WebSocketDisconnect:
         websocket_manager.disconnect(websocket)

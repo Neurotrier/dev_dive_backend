@@ -17,7 +17,7 @@ class ChatRepository(BaseRepository[ChatMessage]):
         stmt = select(ChatMessage).options(
             defer(ChatMessage.user_id),
             selectinload(ChatMessage.user).options(load_only(User.id, User.username)),
-        )
+        ).order_by(ChatMessage.created_at.desc())
         stmt = stmt.offset((filters.offset - 1) * filters.limit).limit(filters.limit)
         results = await self._session.execute(stmt)
         chat_messages = results.scalars().all()
