@@ -138,7 +138,9 @@ class QuestionRepository(BaseRepository[Question]):
             total_query = total_query.where(Question.user_id == filters.user_id)
 
         if filters.tags:
-            total_query = total_query.join(Question.tags).where(Tag.name.in_(filters.tags))
+            total_query = total_query.join(Question.tags).where(
+                Tag.name.in_(filters.tags)
+            )
 
         total = await self._session.scalar(total_query)
         stmt = (
@@ -165,5 +167,8 @@ class QuestionRepository(BaseRepository[Question]):
     @staticmethod
     def to_schema(question: Question) -> QuestionGet:
         return QuestionGet(
-            id=question.id, content=question.content, user_id=question.user_id
+            id=question.id,
+            content=question.content,
+            user_id=question.user_id,
+            created_at=question.created_at.isoformat(),
         )

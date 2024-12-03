@@ -14,12 +14,14 @@ class AnswerGet(BaseModel):
     user_id: UUID
     question_id: UUID
     content: str
+    created_at: str
 
 
 class AnswerWithUserGet(BaseModel):
     id: UUID
     question_id: UUID
     content: str
+    created_at: str
     user: dict
 
 

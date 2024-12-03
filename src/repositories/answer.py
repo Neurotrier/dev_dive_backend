@@ -46,4 +46,5 @@ class AnswerRepository(BaseRepository[Answer]):
             content=answer.content,
             user_id=answer.user_id,
             question_id=answer.question_id,
+            created_at=answer.created_at.isoformat(),
         )

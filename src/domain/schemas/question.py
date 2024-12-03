@@ -16,6 +16,7 @@ class QuestionGet(BaseModel):
     id: UUID
     user_id: UUID
     content: str
+    created_at: str
 
 
 class QuestionsWithFiltersGet(BaseModel):

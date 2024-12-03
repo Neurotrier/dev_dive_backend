@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Annotated, Union
 from uuid import UUID
 
@@ -11,6 +10,11 @@ from src.domain.schemas.question import QuestionGet
 from src.domain.schemas.tag import TagWithQuestionsCountGet
 
 
+class UserBase(BaseModel):
+    id: UUID
+    username: str
+
+
 class UserGet(BaseModel):
     id: UUID
     username: str
@@ -18,7 +22,7 @@ class UserGet(BaseModel):
     email: str
     reputation: int
     role: Role
-    created_at: datetime
+    created_at: str
 
 
 class UserPersonalDataGet(BaseModel):

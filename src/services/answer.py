@@ -33,6 +33,7 @@ class AnswerService:
                 id=answer.id,
                 content=answer.content,
                 question_id=answer.question_id,
+                created_at=answer.created_at.isoformat(),
                 user=user,
             )
         return None

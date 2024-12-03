@@ -34,6 +34,7 @@ class QuestionService:
             id=question.id,
             user_id=question.user_id,
             content=question.content,
+            created_at=question.created_at.isoformat(),
             tags=tags,
         )
 

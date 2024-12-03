@@ -112,5 +112,5 @@ class UserRepository(BaseRepository[User]):
             info=user.info,
             reputation=user.reputation,
             role=user.role,
-            created_at=user.created_at,
+            created_at=user.created_at.isoformat(),
         )
