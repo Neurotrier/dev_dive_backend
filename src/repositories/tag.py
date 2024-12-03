@@ -1,11 +1,12 @@
 from uuid import UUID
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import defer, load_only, selectinload
 
 from src.domain.models import Question, QuestionTag, User
 from src.domain.models.tag import Tag
+from src.domain.schemas.tag import TagsWithFiltersGet
 from src.repositories.base import BaseRepository
 
 
@@ -32,6 +33,19 @@ class TagRepository(BaseRepository[Tag]):
         res = await self._session.execute(stmt)
         tag = res.scalar_one_or_none()
         return tag
+
+    async def get_tags(self, filters: TagsWithFiltersGet) -> dict:
+        stmt = select(Tag)
+        total_query = select(func.count(Tag.id))
+
+        total = await self._session.scalar(total_query)
+
+        stmt = stmt.offset((filters.offset - 1) * filters.limit).limit(filters.limit)
+
+        results = await self._session.execute(stmt)
+        tags = results.scalars().all()
+
+        return {"total": total, "tags": tags}
 
     async def delete_tag(self, tag_id: UUID) -> UUID | None:
         record = await self.get_by_pk(id=tag_id)

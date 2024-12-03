@@ -10,10 +10,10 @@ load_dotenv()
 BASE_DIR = Path(__file__).parent.parent.parent
 with open(BASE_DIR / "pyproject.toml", "rb") as f:
     pyproject_data = tomllib.load(f)
-    project_version = pyproject_data["tool"]["poetry"]["version"]
-    project_name = pyproject_data["tool"]["poetry"]["name"]
-    project_description = pyproject_data["tool"]["poetry"]["description"]
-    project_author = pyproject_data["tool"]["poetry"]["authors"][0]
+    project_version = pyproject_data["project"]["version"]
+    project_name = pyproject_data["project"]["name"]
+    project_description = pyproject_data["project"]["description"]
+    project_author = pyproject_data["project"]["authors"][0]
 
 
 class Settings(BaseSettings):
@@ -26,6 +26,8 @@ class Settings(BaseSettings):
 
     UPVOTE_VALUE: int = os.getenv("UPVOTE_VALUE")
     DOWNVOTE_VALUE: int = os.getenv("DOWNVOTE_VALUE")
+    BAN_THRESHOLD: int = os.getenv("BAN_THRESHOLD")
+    MODERATOR_THRESHOLD: int = os.getenv("MODERATOR_THRESHOLD")
 
     DEBUG: bool = os.getenv("DEBUG", False)
 
@@ -51,9 +53,14 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv("SECRET_KEY")
     BUCKET_NAME: str = os.getenv("BUCKET_NAME")
 
+    APP_PASSWORD: str = os.getenv("APP_PASSWORD")
+    EMAIL_ADDRESS: str = os.getenv("EMAIL_ADDRESS")
+    SMTP_SERVER: str = os.getenv("SMTP_SERVER")
+    SMTP_PORT: int = os.getenv("SMTP_PORT")
+
     @computed_field
     @property
-    def DATABASE_URL(self) -> str:
+    def ASYNC_DATABASE_URL(self) -> str:
         return (
             f"postgresql+asyncpg://"
             f"{self.POSTGRES_USER}:"
@@ -65,8 +72,25 @@ class Settings(BaseSettings):
 
     @computed_field
     @property
+    def SYNC_DATABASE_URL(self) -> str:
+        return (
+            f"postgresql+psycopg://"
+            f"{self.POSTGRES_USER}:"
+            f"{self.POSTGRES_PASSWORD}@"
+            f"{self.POSTGRES_HOST}:"
+            f"{self.POSTGRES_PORT}/"
+            f"{self.POSTGRES_DB}"
+        )
+
+    @computed_field
+    @property
     def MINIO_URL(self) -> str:
         return f"{self.MINIO_HOST}:{self.MINIO_PORT}"
+
+    @computed_field
+    @property
+    def REDIS_URL(self) -> str:
+        return f"redis://{self.REDIS_HOST}:" f"{self.REDIS_PORT}/1"
 
 
 settings = Settings()

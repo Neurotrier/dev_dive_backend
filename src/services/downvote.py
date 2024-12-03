@@ -18,10 +18,13 @@ class DownvoteService:
 
     async def create_downvote(self, data: DownvoteCreate, session: AsyncSession):
         try:
+            fix_reputation = 0
             upvote_repository = UpvoteRepository(session=session)
             upvote = await upvote_repository.get_by_filter(**data.model_dump())
             if upvote:
-                return None
+                await upvote_repository.delete(id=upvote[0].id)
+                await upvote_repository.commit()
+                fix_reputation = -settings.UPVOTE_VALUE
 
             input_data = Downvote(**data.model_dump())
             downvote = await self.repository.add(record=input_data)
@@ -41,7 +44,8 @@ class DownvoteService:
 
             user_service = UserService(session=session)
             await user_service.update_user_reputation(
-                user_id=source.user_id, reputation=settings.DOWNVOTE_VALUE
+                user_id=source.user_id,
+                reputation=settings.DOWNVOTE_VALUE + fix_reputation,
             )
 
             await self.repository.commit()
@@ -52,6 +56,14 @@ class DownvoteService:
     async def get_downvote(self, downvote_id: UUID):
         downvote = await self.repository.get_by_pk(id=downvote_id)
         return downvote
+
+    async def get_downvote_by_user_and_source(self, user_id: UUID, source_id: UUID):
+        downvotes = await self.repository.get_by_filter(
+            user_id=user_id, source_id=source_id
+        )
+        if not downvotes:
+            return None
+        return downvotes[0]
 
     async def delete_downvote(self, downvote_id: UUID, session: AsyncSession):
         downvote = await self.get_downvote(downvote_id)

@@ -1,9 +1,11 @@
 import asyncio
 import json
+from typing import Annotated
 from uuid import UUID
 
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     Query,
     WebSocket,
@@ -14,6 +16,7 @@ from fastapi import (
 from src.db.session import DBSession
 from src.domain.schemas.chat import RecentChatMessagesFiltersGet
 from src.managers.websocket_manager import websocket_manager
+from src.services.auth import AuthService
 from src.services.chat import ChatService
 from src.services.user import UserService
 
@@ -30,7 +33,6 @@ async def websocket_endpoint(
     _service_user = UserService(session=db)
 
     await websocket_manager.connect(websocket)
-    await asyncio.sleep(0)
     try:
         while True:
             user = await _service_user.get_user(user_id)
@@ -38,6 +40,10 @@ async def websocket_endpoint(
             if not data:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, detail="Empty message"
+                )
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
                 )
             chat_message = await _service_chat.create_chat_message(
                 message=json.loads(data)["data"], user_id=user.id
@@ -49,7 +55,7 @@ async def websocket_endpoint(
                 "created_at": chat_message.created_at.isoformat(),
             }
             await websocket_manager.broadcast(
-                current_connection=websocket, message=message
+                message=message
             )
     except WebSocketDisconnect:
         websocket_manager.disconnect(websocket)
@@ -60,6 +66,7 @@ async def websocket_endpoint(
 @router.get("/")
 async def get_recent_chat_messages(
     db: DBSession,
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
     limit: int = Query(50),
     offset: int = Query(1),
 ):

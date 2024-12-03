@@ -1,7 +1,7 @@
-from typing import Annotated, Optional, Union
+from typing import Annotated, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
 from src.db.session import DBSession
 from src.domain.schemas.question import (
@@ -15,7 +15,6 @@ from src.services.question import QuestionService
 router = APIRouter(
     prefix="/questions",
     tags=["questions"],
-    dependencies=[Depends(AuthService.access_jwt_required)],
 )
 
 
@@ -23,12 +22,22 @@ router = APIRouter(
     "/",
     status_code=status.HTTP_200_OK,
 )
-async def create_question(db: DBSession, data: QuestionCreate):
+async def create_question(
+    db: DBSession,
+    data: QuestionCreate,
+    token: Annotated[str, Depends(AuthService.access_jwt_required)],
+):
+    is_owner = await AuthService.is_owner(data=data, token=token)
+    if not is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
+
     _service = QuestionService(session=db)
     response = await _service.create_question(data=data)
     if not response:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Could not create question",
         )
     else:
@@ -45,10 +54,11 @@ async def get_questions(
     offset: Optional[int] = Query(1, gt=0),
     tags: list[Optional[str]] = Query(None),
     content: Optional[str] = Query(None),
+    user_id: Optional[UUID] = Query(None),
 ):
     _service = QuestionService(session=db)
     filters = QuestionsWithFiltersGet(
-        limit=limit, offset=offset, tags=tags, content=content
+        limit=limit, offset=offset, tags=tags, content=content, user_id=user_id
     )
     response = await _service.get_questions(filters=filters)
     if not response:
@@ -85,6 +95,7 @@ async def update_question(
     question_id: Annotated[UUID, Path()],
     data: QuestionUpdate,
     is_question_owner: Annotated[bool, Depends(AuthService.is_question_owner)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
     if not is_question_owner:
         raise HTTPException(
@@ -109,6 +120,7 @@ async def delete_question(
     db: DBSession,
     question_id: Annotated[UUID, Path()],
     is_question_owner: Annotated[bool, Depends(AuthService.is_question_owner)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
     if not is_question_owner:
         raise HTTPException(

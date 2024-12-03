@@ -28,7 +28,9 @@ class UserService:
         res = await self.repository.get_user_personal_data(user_id=user_id)
         if res:
             return UserPersonalDataGet(
-                user=UserRepository.to_schema(res["user"]),
+                user=self.repository.to_schema(res["user"]),
+                total_questions=res["total_questions"],
+                total_answers=res["total_answers"],
                 questions=[
                     QuestionRepository.to_schema(question)
                     for question in res["questions"]
@@ -50,27 +52,27 @@ class UserService:
     async def get_user(self, user_id: UUID) -> Optional[UserGet]:
         user = await self.repository.get_by_pk(id=user_id)
         if user:
-            return UserRepository.to_schema(user)
+            return self.repository.to_schema(user)
         return None
 
     async def update_user(
-        self, user_id: UUID, data: UserUpdate, image: Optional[UploadFile] = None
+        self, data: UserUpdate, image: Optional[UploadFile] = None
     ) -> UserGet:
         try:
             image_url = None
             if image:
-                object_name = f"{user_id}/{image.filename}"
+                object_name = f"{data.user_id}/{image.filename}"
                 image_url = await minio_manager.upload_image(
                     object_name=object_name, file=image
                 )
 
             user = await self.repository.update(
-                {**data.model_dump(), "image_url": image_url},
-                id=user_id,
+                {**data.model_dump(exclude={"user_id"}), "image_url": image_url},
+                id=data.user_id,
             )
 
             await self.repository.commit()
-            return UserRepository.to_schema(user)
+            return self.repository.to_schema(user)
 
         except Exception as e:
             logger.error(str(e))
@@ -84,7 +86,7 @@ class UserService:
             id=user_id,
         )
         await self.repository.commit()
-        return UserRepository.to_schema(user)
+        return self.repository.to_schema(user)
 
     async def update_user_reputation(self, user_id: UUID, reputation: int) -> UserGet:
         user = await self.repository.get_by_pk(id=user_id)
@@ -93,7 +95,7 @@ class UserService:
             id=user_id, data={"reputation": user.reputation + reputation}
         )
         await self.repository.commit()
-        return UserRepository.to_schema(user)
+        return self.repository.to_schema(user)
 
     async def delete_user(self, user_id: UUID) -> Optional[UUID]:
         user_id = await self.repository.delete_user(user_id=user_id)

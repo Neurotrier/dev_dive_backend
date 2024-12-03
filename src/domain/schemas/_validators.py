@@ -1,4 +1,5 @@
 import re
+from uuid import UUID
 
 from fastapi import HTTPException
 from starlette import status
@@ -10,7 +11,8 @@ def check_email(email: str) -> str:
     email_pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-]+\.[a-zA-Z0-9-]+$"
     if re.match(email_pattern, email) is None:
         raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Invalid email format!"
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid email format!",
         )
     return email
 
@@ -20,7 +22,7 @@ def check_password(password: str) -> str:
     for symbol in password:
         if ord(symbol) in forbidden_symbols:
             raise HTTPException(
-                status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Forbidden symbols in password!",
             )
     if len(password) < 8:
@@ -34,7 +36,7 @@ def check_password(password: str) -> str:
 def check_username(username: str) -> str:
     if len(username) > 30:
         raise HTTPException(
-            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="The length of your username should be at most 30 characters!",
         )
     return username
@@ -47,3 +49,12 @@ def check_role(role: Role) -> Role:
             detail="Policy denied",
         )
     return role
+
+
+def check_tags(tags: list[UUID]) -> list[UUID]:
+    if not tags:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Tags list cannot be empty!",
+        )
+    return tags

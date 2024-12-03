@@ -24,7 +24,6 @@ async def signup(
         if response:
             return response
         else:
-            print(logger.name)
             logger.error("User with this email already exists")
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -64,7 +63,7 @@ async def refresh_token(
 ):
     _service = AuthService(session=db)
     try:
-        token = refresh[7:].strip()
+        token = refresh.strip()
         response = await _service.refresh_token(
             refresh_token=token, redis_manager=RedisManager()
         )

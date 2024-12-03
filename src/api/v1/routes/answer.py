@@ -3,7 +3,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 
-from src.core.logger import logger
 from src.db.session import DBSession
 from src.domain.schemas.answer import AnswerCreate, AnswerUpdate
 from src.services.answer import AnswerService
@@ -12,7 +11,6 @@ from src.services.auth import AuthService
 router = APIRouter(
     prefix="/answers",
     tags=["answers"],
-    dependencies=[Depends(AuthService.access_jwt_required)],
 )
 
 
@@ -20,7 +18,17 @@ router = APIRouter(
     "/",
     status_code=status.HTTP_200_OK,
 )
-async def create_answer(db: DBSession, data: AnswerCreate):
+async def create_answer(
+    db: DBSession,
+    data: AnswerCreate,
+    token: Annotated[str, Depends(AuthService.access_jwt_required)],
+):
+    is_owner = await AuthService.is_owner(data=data, token=token)
+    if not is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
+
     _service = AnswerService(session=db)
     response = await _service.create_answer(data=data)
     if not response:
@@ -56,6 +64,7 @@ async def update_answer(
     answer_id: Annotated[UUID, Path()],
     data: AnswerUpdate,
     is_answer_owner: Annotated[bool, Depends(AuthService.is_answer_owner)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
     if not is_answer_owner:
         raise HTTPException(
@@ -80,6 +89,7 @@ async def delete_answer(
     db: DBSession,
     answer_id: Annotated[UUID, Path()],
     is_answer_owner: Annotated[bool, Depends(AuthService.is_answer_owner)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
     if not is_answer_owner:
         raise HTTPException(

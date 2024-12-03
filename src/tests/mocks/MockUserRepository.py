@@ -1,23 +1,31 @@
 class MockUserRepository:
-    def __init__(self):
-        self.users = {
-            "1": {"username": "bob", "id": "1", "info": None, "image_url": None}
-        }
+    def __init__(self, users):
+        self.users = users
         self.committed = False
         self.rolled_back = False
 
-    async def get_user(self, user_id):
-        return self.users.get(user_id)
+    async def get_by_pk(self, id):
+        return self.users.get(id)
 
     async def update(self, data, id):
-        print(data)
+        id = str(id)
         if id in self.users:
             user = self.users.get(id)
             user.update(data)
             return user
+
+    async def delete_user(self, user_id):
+        if user_id in self.users:
+            del self.users[user_id]
+            return user_id
+        return None
 
     async def commit(self):
         self.committed = True
 
     async def rollback(self):
         self.rolled_back = True
+
+    @staticmethod
+    def to_schema(user):
+        return user

@@ -37,6 +37,8 @@ services:
   minio:
     image: minio/minio
     container_name: minio
+    networks:
+      - common_network
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -49,19 +51,41 @@ services:
       - ~/app/minio:/data
     command: server /data --console-address ":9001"
 
-#  api:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    networks:
-#      - common_network
-#    volumes:
-#      - ./src:/src
-#    ports:
-#      - "8000:8000"
-#    expose:
-#      - "8000"
-#    command: /code/start.sh
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - common_network
+    volumes:
+      - ./src:/src
+    ports:
+      - "8000:8000"
+    expose:
+      - "8000"
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    command:  >
+      bash -c "
+      chmod +x /code/start.sh & bash /code/start.sh
+      wait"
+
+  workers:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - common_network
+    volumes:
+      - ./src:/src
+    command:  >
+        bash -c "
+        chmod +x /code/workers.sh & bash /code/workers.sh
+        wait"
+
+
 
 networks:
   common_network:

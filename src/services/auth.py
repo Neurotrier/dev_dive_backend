@@ -6,6 +6,7 @@ import bcrypt
 import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
@@ -14,12 +15,14 @@ from src.core.logger import logger
 from src.core.role import Role
 from src.db.session import DBSession
 from src.domain.models import User
-from src.domain.schemas.auth import AuthSignup, TokenInfo
+from src.domain.schemas.auth import AuthSignin, AuthSignup
 from src.domain.schemas.user import UserGet
 from src.managers import RedisManager
 from src.repositories.answer import AnswerRepository
 from src.repositories.auth import AuthRepository
+from src.repositories.downvote import DownvoteRepository
 from src.repositories.question import QuestionRepository
+from src.repositories.upvote import UpvoteRepository
 from src.repositories.user import UserRepository
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/signin/")
@@ -38,7 +41,7 @@ class AuthService:
         await self.repository.commit()
         return UserRepository.to_schema(user)
 
-    async def signin(self, data: OAuth2PasswordRequestForm) -> Optional[TokenInfo]:
+    async def signin(self, data: OAuth2PasswordRequestForm) -> Optional[AuthSignin]:
         user = await self.repository.get_user_by_email(email=data.username)
         if user:
             payload = self.__make_jwt_payload(user=user)
@@ -50,49 +53,42 @@ class AuthService:
                 expire_minutes=settings.refresh_token_ttl_min,
                 is_access=False,
             )
-            return TokenInfo(
+            return AuthSignin(
                 access_token=access_token,
                 refresh_token=refresh_token,
                 token_type=settings.token_type,
+                user_id=user.id,
             )
         return None
 
     async def refresh_token(
         self, refresh_token: str, redis_manager: RedisManager
-    ) -> TokenInfo:
-        payload = AuthService.decode_jwt(token=refresh_token)
-        if payload.get("status") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Refresh jwt token is required",
-            )
-
-        is_valid = self.repository.check_is_valid(
-            payload=payload, redis_manager=redis_manager
-        )
-        if is_valid:
-            access_token = self.__encode_jwt(
-                payload=payload, expire_minutes=settings.access_token_ttl_min
-            )
-            refresh_token = self.__encode_jwt(
-                payload=payload,
-                expire_minutes=settings.refresh_token_ttl_min,
-                is_access=False,
-            )
-            return TokenInfo(
-                access_token=access_token,
-                refresh_token=refresh_token,
-                token_type=settings.token_type,
-            )
-
-    @classmethod
-    def access_jwt_required(cls, token: str = Depends(oauth2_scheme)):
+    ) -> AuthSignin:
         try:
-            payload = cls.decode_jwt(token=token)
-            if payload.get("status") != "access":
+            payload = AuthService.decode_jwt(token=refresh_token)
+            if payload.get("status") != "refresh":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access jwt token is required",
+                    detail="Refresh jwt token is required",
+                )
+
+            is_valid = self.repository.check_is_valid(
+                payload=payload, redis_manager=redis_manager
+            )
+            if is_valid:
+                access_token = self.__encode_jwt(
+                    payload=payload, expire_minutes=settings.access_token_ttl_min
+                )
+                refresh_token = self.__encode_jwt(
+                    payload=payload,
+                    expire_minutes=settings.refresh_token_ttl_min,
+                    is_access=False,
+                )
+                return AuthSignin(
+                    access_token=access_token,
+                    refresh_token=refresh_token,
+                    token_type=settings.token_type,
+                    user_id=payload["user_id"],
                 )
         except (
             jwt.ExpiredSignatureError,
@@ -101,7 +97,29 @@ class AuthService:
             jwt.InvalidTokenError,
         ):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid jwt token"
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid jwt token"
+            )
+        except Exception as e:
+            logger.error(str(e))
+
+    @classmethod
+    def access_jwt_required(cls, token: str = Depends(oauth2_scheme)) -> str:
+        try:
+            payload = cls.decode_jwt(token=token)
+            if payload.get("status") != "access":
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Access jwt token is required",
+                )
+            return token
+        except (
+            jwt.ExpiredSignatureError,
+            jwt.InvalidTokenError,
+            jwt.DecodeError,
+            jwt.InvalidTokenError,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid jwt token"
             )
         except Exception as e:
             logger.error("Error in access_jwt_required")
@@ -153,11 +171,10 @@ class AuthService:
     @classmethod
     def decode_jwt(
         self,
-        token: str | bytes,
+        token: str,
         secret_key: str = settings.authjwt_secret_key,
         algorithm: str = settings.algorithm,
     ) -> dict:
-
         decoded = jwt.decode(
             token,
             key=secret_key,
@@ -166,8 +183,15 @@ class AuthService:
         return decoded
 
     @classmethod
-    def is_owner(cls, user_id: uuid.UUID, token: str = Depends(oauth2_scheme)) -> bool:
+    async def is_owner(
+        cls, data: BaseModel, token: str = Depends(oauth2_scheme)
+    ) -> bool:
         try:
+            if not hasattr(data, "user_id"):
+                return False
+            user_id = data.user_id
+            if user_id is None:
+                return False
             payload = cls.decode_jwt(token=token)
             if str(user_id) != payload["user_id"]:
                 return False
@@ -181,9 +205,11 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
             )
+        except Exception as e:
+            logger.error(str(e))
 
     @classmethod
-    def is_moderator(cls, token: str = Depends(oauth2_scheme)) -> bool:
+    async def is_moderator(cls, token: str = Depends(oauth2_scheme)) -> bool:
         try:
             payload = cls.decode_jwt(token=token)
             if payload["role"] not in (Role.MODERATOR, Role.ADMIN):
@@ -198,9 +224,11 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
             )
+        except Exception as e:
+            logger.error(str(e))
 
     @classmethod
-    def is_admin(cls, token: str = Depends(oauth2_scheme)) -> bool:
+    async def is_admin(cls, token: str = Depends(oauth2_scheme)) -> bool:
         try:
             payload = cls.decode_jwt(token=token)
             if payload["role"] != Role.ADMIN:
@@ -215,6 +243,8 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
             )
+        except Exception as e:
+            logger.error(str(e))
 
     @classmethod
     async def is_question_owner(
@@ -224,6 +254,10 @@ class AuthService:
             payload = cls.decode_jwt(token=token)
             question_repository = QuestionRepository(session=db)
             question = await question_repository.get_by_pk(id=question_id)
+            if question is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Question not found"
+                )
             if str(question.user_id) != payload["user_id"]:
                 return False
             return True
@@ -236,6 +270,10 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
             )
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            logger.error(str(e))
 
     @classmethod
     async def is_answer_owner(
@@ -245,6 +283,10 @@ class AuthService:
             payload = cls.decode_jwt(token=token)
             answer_repository = AnswerRepository(session=db)
             answer = await answer_repository.get_by_pk(id=answer_id)
+            if answer is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Answer not found"
+                )
             if str(answer.user_id) != payload["user_id"]:
                 return False
             return True
@@ -257,3 +299,65 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
             )
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            logger.error(str(e))
+
+    @classmethod
+    async def is_upvote_owner(
+        cls, upvote_id: uuid.UUID, db: DBSession, token: str = Depends(oauth2_scheme)
+    ) -> bool:
+        try:
+            payload = cls.decode_jwt(token=token)
+            upvote_repository = UpvoteRepository(session=db)
+            upvote = await upvote_repository.get_by_pk(id=upvote_id)
+            if upvote is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Upvote not found"
+                )
+            if str(upvote.user_id) != payload["user_id"]:
+                return False
+            return True
+        except (
+            jwt.ExpiredSignatureError,
+            jwt.InvalidTokenError,
+            jwt.DecodeError,
+            jwt.InvalidTokenError,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
+            )
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            logger.error(str(e))
+
+    @classmethod
+    async def is_downvote_owner(
+        cls, downvote_id: uuid.UUID, db: DBSession, token: str = Depends(oauth2_scheme)
+    ) -> bool:
+        try:
+            payload = cls.decode_jwt(token=token)
+            downvote_repository = DownvoteRepository(session=db)
+            downvote = await downvote_repository.get_by_pk(id=downvote_id)
+            if downvote is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Downvote not found"
+                )
+            if str(downvote.user_id) != payload["user_id"]:
+                return False
+            return True
+        except (
+            jwt.ExpiredSignatureError,
+            jwt.InvalidTokenError,
+            jwt.DecodeError,
+            jwt.InvalidTokenError,
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token"
+            )
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            logger.error(str(e))

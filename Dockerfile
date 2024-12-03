@@ -2,12 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /code
 
-RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir uv
 
-COPY ./pyproject.toml ./poetry.lock* /code/
+COPY ./pyproject.toml ./uv.lock* /code/
 
-RUN poetry install --no-root --no-dev
+RUN uv sync
 
 COPY . /code/
-
-RUN chmod +x /code/start.sh

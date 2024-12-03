@@ -1,7 +1,7 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 
 from src.db.session import DBSession
 from src.domain.schemas.vote import DownvoteCreate, UpvoteCreate
@@ -12,7 +12,6 @@ from src.services.upvote import UpvoteService
 router = APIRouter(
     prefix="/votes",
     tags=["votes"],
-    dependencies=[Depends(AuthService.access_jwt_required)],
 )
 
 
@@ -20,9 +19,18 @@ router = APIRouter(
     "/upvote/",
     status_code=status.HTTP_200_OK,
 )
-async def create_upvote(db: DBSession, data: UpvoteCreate):
-    _service = UpvoteService(session=db)
+async def create_upvote(
+    db: DBSession,
+    data: UpvoteCreate,
+    token: Annotated[str, Depends(AuthService.access_jwt_required)],
+):
+    is_owner = await AuthService.is_owner(data=data, token=token)
+    if not is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
+    _service = UpvoteService(session=db)
     response = await _service.create_upvote(data=data, session=db)
     if not response:
         raise HTTPException(
@@ -37,9 +45,18 @@ async def create_upvote(db: DBSession, data: UpvoteCreate):
     "/downvote/",
     status_code=status.HTTP_200_OK,
 )
-async def create_downvote(db: DBSession, data: DownvoteCreate):
-    _service = DownvoteService(session=db)
+async def create_downvote(
+    db: DBSession,
+    data: DownvoteCreate,
+    token: Annotated[str, Depends(AuthService.access_jwt_required)],
+):
+    is_owner = await AuthService.is_owner(data=data, token=token)
+    if not is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
+    _service = DownvoteService(session=db)
     response = await _service.create_downvote(data=data, session=db)
     if not response:
         raise HTTPException(
@@ -51,13 +68,19 @@ async def create_downvote(db: DBSession, data: DownvoteCreate):
 
 
 @router.get(
-    "/upvote/{upvote_id}/",
+    "/upvote/",
     status_code=status.HTTP_200_OK,
 )
-async def get_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
+async def get_upvote(
+    db: DBSession,
+    user_id: Annotated[UUID, Query()],
+    source_id: Annotated[UUID, Query()],
+):
     _service = UpvoteService(session=db)
 
-    response = await _service.get_upvote(upvote_id=upvote_id)
+    response = await _service.get_upvote_by_user_and_source(
+        user_id=user_id, source_id=source_id
+    )
     if not response:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Upvote not found"
@@ -67,13 +90,19 @@ async def get_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
 
 
 @router.get(
-    "/downvote/{downvote_id}/",
+    "/downvote/",
     status_code=status.HTTP_200_OK,
 )
-async def get_downvote(db: DBSession, downvote_id: Annotated[UUID, Path()]):
+async def get_downvote(
+    db: DBSession,
+    user_id: Annotated[UUID, Query()],
+    source_id: Annotated[UUID, Query()],
+):
     _service = DownvoteService(session=db)
 
-    response = await _service.get_downvote(downvote_id=downvote_id)
+    response = await _service.get_downvote_by_user_and_source(
+        user_id=user_id, source_id=source_id
+    )
     if not response:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Downvote not found"
@@ -86,9 +115,18 @@ async def get_downvote(db: DBSession, downvote_id: Annotated[UUID, Path()]):
     "/upvote/{upvote_id}/",
     status_code=status.HTTP_200_OK,
 )
-async def delete_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
-    _service = UpvoteService(session=db)
+async def delete_upvote(
+    db: DBSession,
+    upvote_id: Annotated[UUID, Path()],
+    is_upvote_owner: Annotated[bool, Depends(AuthService.is_upvote_owner)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
+):
+    if not is_upvote_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
 
+    _service = UpvoteService(session=db)
     response = await _service.delete_upvote(upvote_id=upvote_id, session=db)
     if not response:
         raise HTTPException(
@@ -102,7 +140,16 @@ async def delete_upvote(db: DBSession, upvote_id: Annotated[UUID, Path()]):
     "/downvote/{downvote_id}/",
     status_code=status.HTTP_200_OK,
 )
-async def delete_downvote(db: DBSession, downvote_id: Annotated[UUID, Path()]):
+async def delete_downvote(
+    db: DBSession,
+    downvote_id: Annotated[UUID, Path()],
+    is_downvote_owner: Annotated[bool, Depends(AuthService.is_downvote_owner)],
+    _: Annotated[str, Depends(AuthService.access_jwt_required)],
+):
+    if not is_downvote_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
+        )
     _service = DownvoteService(session=db)
 
     response = await _service.delete_downvote(downvote_id=downvote_id, session=db)

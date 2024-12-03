@@ -18,12 +18,17 @@ class QuestionService:
     def __init__(self, session: AsyncSession):
         self.repository = QuestionRepository(session)
 
-    async def create_question(self, data: QuestionCreate) -> QuestionWithTagsGet:
+    async def create_question(
+        self, data: QuestionCreate
+    ) -> Optional[QuestionWithTagsGet]:
         input_data = Question(**data.model_dump(exclude={"tags"}))
         question = await self.repository.add(record=input_data)
         tags = await self.repository.create_question_tags(
             tags=data.tags, question_id=question.id
         )
+        if tags is None:
+            return None
+
         await self.repository.commit()
         return QuestionWithTagsGet(
             id=question.id,
@@ -46,8 +51,8 @@ class QuestionService:
         return None
 
     async def get_questions(self, filters: QuestionsWithFiltersGet) -> dict:
-        total, items = await self.repository.get_questions(filters=filters)
-        return {"total": total, "items": items}
+        questions = await self.repository.get_questions(filters=filters)
+        return questions
 
     async def update_question(
         self, question_id: UUID, data: QuestionUpdate
