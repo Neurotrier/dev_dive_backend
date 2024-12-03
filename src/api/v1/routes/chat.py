@@ -32,8 +32,8 @@ async def websocket_endpoint(
     _service_chat = ChatService(session=db)
     _service_user = UserService(session=db)
 
-    await websocket_manager.connect(websocket)
     try:
+        await websocket_manager.connect(websocket)
         while True:
             user = await _service_user.get_user(user_id)
             data = await websocket.receive_text()
@@ -46,17 +46,11 @@ async def websocket_endpoint(
                     status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
                 )
             chat_message = await _service_chat.create_chat_message(
-                message=json.loads(data)["data"], user_id=user.id
+                message=json.loads(data)["data"],
+                user_id=user.id,
+                username=user.username,
             )
-            message = {
-                "data": json.loads(data)["data"],
-                "user_id": str(user.id),
-                "username": user.username,
-                "created_at": chat_message.created_at.isoformat(),
-            }
-            await websocket_manager.broadcast(
-                current_connection=websocket, message=message
-            )
+            await websocket_manager.broadcast(chat_message=chat_message.model_dump())
     except WebSocketDisconnect:
         websocket_manager.disconnect(websocket)
     except HTTPException as e:

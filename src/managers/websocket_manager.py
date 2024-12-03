@@ -12,10 +12,9 @@ class WebsocketManager:
     def disconnect(self, websocket: WebSocket):
         self.active_connections.remove(websocket)
 
-    async def broadcast(self, current_connection: WebSocket, message: dict):
+    async def broadcast(self, chat_message: dict):
         for connection in self.active_connections:
-            if connection != current_connection:
-                await connection.send_text(str(message))
+            await connection.send_text(str(chat_message))
 
 
 websocket_manager = WebsocketManager()
