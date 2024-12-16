@@ -5,6 +5,7 @@ from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.logger import logger
+from src.domain.schemas.image import ImageCreate
 from src.domain.schemas.tag import TagWithQuestionsCountGet
 from src.domain.schemas.user import (
     UserGet,
@@ -12,15 +13,16 @@ from src.domain.schemas.user import (
     UserPoliciesUpdate,
     UserUpdate,
 )
-from src.managers import minio_manager
 from src.repositories.answer import AnswerRepository
 from src.repositories.question import QuestionRepository
 from src.repositories.user import UserRepository
+from src.services.image import ImageService
 
 
 class UserService:
     def __init__(self, session: AsyncSession):
         self.repository = UserRepository(session)
+        self.image_service = ImageService(session)
 
     async def get_user_personal_data(
         self, user_id: UUID
@@ -44,7 +46,6 @@ class UserService:
                     )
                     for tag in res["tags"]
                 ],
-                presigned_url=res["presigned_url"],
             )
         else:
             return None
@@ -59,18 +60,15 @@ class UserService:
         self, data: UserUpdate, image: Optional[UploadFile] = None
     ) -> UserGet:
         try:
-            image_url = None
             if image:
-                object_name = f"{data.user_id}/{image.filename}"
-                image_url = await minio_manager.upload_image(
-                    object_name=object_name, file=image
+                await self.image_service.create_image(ImageCreate(
+                    user_id=data.user_id, image=await image.read(size=image.size))
                 )
 
             user = await self.repository.update(
-                {**data.model_dump(exclude={"user_id"}), "image_url": image_url},
+                data.model_dump(exclude={"user_id"}),
                 id=data.user_id,
             )
-
             await self.repository.commit()
             return self.repository.to_schema(user)
 

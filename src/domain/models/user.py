@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from .answer import Answer
     from .chat_message import ChatMessage
     from .downvote import Downvote
+    from .image import Image
     from .question import Question
     from .upvote import Upvote
 
@@ -23,7 +24,6 @@ class User(Base):
     role: Mapped[Role] = mapped_column(default=Role.USER)
     is_banned: Mapped[bool] = mapped_column(Boolean, default=False)
     reputation: Mapped[int] = mapped_column(Integer, default=0)
-    image_url: Mapped[str] = mapped_column(String(200), nullable=True)
 
     questions: Mapped["Question"] = relationship(
         "Question", back_populates="user", cascade="all, delete-orphan"
@@ -40,3 +40,4 @@ class User(Base):
     chat_messages: Mapped["ChatMessage"] = relationship(
         "ChatMessage", back_populates="user"
     )
+    image: Mapped["Image"] = relationship("Image")

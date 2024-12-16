@@ -3,6 +3,7 @@ from .answer import *
 from .base import *
 from .chat_message import *
 from .downvote import *
+from .image import *
 from .question import *
 from .tag import *
 from .upvote import *

@@ -7,7 +7,6 @@ from sqlalchemy.orm import aliased
 from src.domain.models import Answer, ChatMessage, Question, QuestionTag, Tag
 from src.domain.models.user import User
 from src.domain.schemas.user import UserGet
-from src.managers import minio_manager
 from src.repositories.base import BaseRepository
 
 
@@ -60,14 +59,6 @@ class UserRepository(BaseRepository[User]):
         res = await self._session.execute(stmt)
         best_three_tags = res.fetchall()
 
-        if user.image_url:
-            object_name = "/".join(user.image_url.split("/")[1:])
-            presigned_url = minio_manager.generate_presigned_url(
-                object_name=object_name
-            )
-        else:
-            presigned_url = None
-
         stmt = select(func.count(Question.id)).where(Question.user_id == user_id)
         res = await self._session.execute(stmt)
         total_questions = res.scalar_one_or_none()
@@ -83,7 +74,6 @@ class UserRepository(BaseRepository[User]):
             "questions": last_three_questions,
             "answers": last_three_answers,
             "tags": best_three_tags,
-            "presigned_url": presigned_url,
         }
 
     async def delete_user(self, user_id: UUID) -> UUID | None:

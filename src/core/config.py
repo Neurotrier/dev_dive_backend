@@ -47,12 +47,6 @@ class Settings(BaseSettings):
     REDIS_PORT: int = os.getenv("REDIS_PORT")
     CACHE_NAME: str = os.getenv("CACHE_NAME")
 
-    MINIO_HOST: str = os.getenv("MINIO_HOST")
-    MINIO_PORT: int = os.getenv("MINIO_PORT")
-    ACCESS_KEY: str = os.getenv("ACCESS_KEY")
-    SECRET_KEY: str = os.getenv("SECRET_KEY")
-    BUCKET_NAME: str = os.getenv("BUCKET_NAME")
-
     APP_PASSWORD: str = os.getenv("APP_PASSWORD")
     EMAIL_ADDRESS: str = os.getenv("EMAIL_ADDRESS")
     SMTP_SERVER: str = os.getenv("SMTP_SERVER")
@@ -81,11 +75,6 @@ class Settings(BaseSettings):
             f"{self.POSTGRES_PORT}/"
             f"{self.POSTGRES_DB}"
         )
-
-    @computed_field
-    @property
-    def MINIO_URL(self) -> str:
-        return f"{self.MINIO_HOST}:{self.MINIO_PORT}"
 
     @computed_field
     @property

@@ -32,7 +32,6 @@ class UserPersonalDataGet(BaseModel):
     questions: list[QuestionGet]
     answers: list[AnswerGet]
     tags: list[TagWithQuestionsCountGet]
-    presigned_url: str | None
 
 
 class UserUpdate(BaseModel):
