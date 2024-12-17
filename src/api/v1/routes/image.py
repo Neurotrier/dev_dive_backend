@@ -1,10 +1,9 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
+from fastapi import APIRouter, HTTPException, Path, Response, status
 
 from src.db.session import DBSession
-from src.services.auth import AuthService
 from src.services.image import ImageService
 
 router = APIRouter(
@@ -20,7 +19,6 @@ router = APIRouter(
 async def get_image_by_user_id(
     db: DBSession,
     user_id: Annotated[UUID, Path()],
-    _: Annotated[str, Depends(AuthService.access_jwt_required)],
 ):
     _service = ImageService(session=db)
 

@@ -61,8 +61,10 @@ class UserService:
     ) -> UserGet:
         try:
             if image:
-                await self.image_service.create_image(ImageCreate(
-                    user_id=data.user_id, image=await image.read(size=image.size))
+                await self.image_service.create_image(
+                    ImageCreate(
+                        user_id=data.user_id, image=await image.read(size=image.size)
+                    )
                 )
 
             user = await self.repository.update(
